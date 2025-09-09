@@ -1,5 +1,5 @@
 // index.ts
-import { createRouter, RouteRecordRaw, createWebHashHistory } from 'vue-router';
+import { createRouter, RouteRecordRaw, createWebHistory } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -15,12 +15,28 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '首页'
         }
+      },
+      {
+        path: '/register',
+        name: 'Register',
+        component: () => import('@/views/RegisterIndividual.vue'),
+        meta: {
+          title: '注册'
+        }
+      },
+      {
+        path: '/update/:id',
+        name: 'Update',
+        component: () => import('@/views/UpdatePage.vue'),
+        meta: {
+          title: '编辑'
+        }
       }
     ]
   }
 ];
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes
 });
 
