@@ -1,7 +1,6 @@
 <template>
-  <div v-if="!individualId" class="layout">
+  <div v-if="!individualId" class="layout" v-loading="loading">
     <van-form @submit="onSubmit" class="form-wrapper">
-      <!-- 基本信息 -->
       <van-divider>基本信息</van-divider>
       <van-cell-group inset>
         <van-field
@@ -35,8 +34,6 @@
           ]"
         />
       </van-cell-group>
-
-      <!-- 证件上传 -->
       <van-divider>证件上传</van-divider>
       <van-cell-group inset>
         <van-field
@@ -71,7 +68,6 @@
         </van-field>
       </van-cell-group>
 
-      <!-- 其他信息 -->
       <van-divider>其他信息</van-divider>
       <van-cell-group inset>
         <van-field
@@ -99,16 +95,12 @@
           @click="openPicker('occupation')"
         />
       </van-cell-group>
-
-      <!-- 底部提交按钮 -->
       <div class="submit-bar">
         <van-button round block type="primary" native-type="submit">
           提交个体户签约
         </van-button>
       </div>
     </van-form>
-
-    <!-- 通用选择器 Popup -->
     <van-popup v-model:show="showPicker" position="bottom" round>
       <van-picker
         :columns="currentColumns"
@@ -122,46 +114,53 @@
     </van-popup>
   </div>
 
-  <div v-else class="status-page">
-    <!-- 标题栏 -->
-    <van-nav-bar title="个体户状态" fixed />
-
-    <!-- 状态卡片 -->
-    <van-card class="status-card">
-      <template #title>
-        <div class="status-header">
-          <span>当前状态：</span>
-          <van-tag :type="statusTagType">{{ statusText }}</van-tag>
-        </div>
-      </template>
-
-      <template #footer>
-        <div class="action-buttons">
-          <!-- 刷新按钮 -->
-          <van-button type="primary" round size="small" @click="refreshStatus">
-            刷新状态
-          </van-button>
-
-          <!-- 失败时的操作 -->
-          <template v-if="status === 'failed'">
-            <van-button type="danger" round size="small" @click="resubmit">
+  <div class="status-page" v-loading="loading">
+    <van-empty :description="`您的个体户签约状态为:${statusMap[status]}`">
+      <div>
+        <template v-if="status === 'failed'">
+          <p style="text-align: center; font-size: 13px; color: #666">
+            若信息无误，请重新提交；若信息有误，请修改后重新提交
+          </p>
+          <div style="display: flex; justify-content: center">
+            <van-button
+              type="primary"
+              style="margin-right: 12px"
+              size="small"
+              @click="resubmit"
+            >
               重新提交
             </van-button>
-            <van-button type="warning" round size="small" @click="edit">
+            <van-button style="margin-left: 12px" size="small" @click="edit">
               修改信息
             </van-button>
-          </template>
-        </div>
-      </template>
-    </van-card>
+          </div>
+        </template>
+        <van-button
+          type="primary"
+          plain
+          style="width: 160px; display: block; margin: 40px auto"
+          @click="throttledFetchStatus"
+        >
+          刷新状态
+        </van-button>
+      </div>
+    </van-empty>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
-import { showToast, showLoadingToast, closeToast } from 'vant';
+import {
+  showToast,
+  showLoadingToast,
+  closeToast,
+  showSuccessToast,
+  showFailToast
+} from 'vant';
 import { uploadFile, registerIndividual, getIndividualStatus } from '@/api';
 import { useIndividualStore } from '@/store/individual';
+import { throttle } from 'lodash-es';
+import 'vant/lib/toast/style';
 
 const store = useIndividualStore();
 
@@ -175,6 +174,8 @@ const phone_number = ref('');
 const education = ref('');
 const political = ref('');
 const occupation = ref('');
+
+const loading = ref(false);
 
 const id_face = ref<any[]>([]);
 const id_back = ref<any[]>([]);
@@ -190,7 +191,7 @@ const currentColumns = ref<any[]>([]);
 let currentField: 'education' | 'political' | 'occupation' | null = null;
 const status = ref<
   'submitted' | 'signing' | 'completed' | 'failed' | 'cancelled'
->('submitted');
+>('failed');
 
 // 状态文字映射
 const statusMap: Record<typeof status.value, string> = {
@@ -270,10 +271,10 @@ const afterReadFace = async (fileItem: { file: File }) => {
     const res = await uploadFile(formData);
     closeToast();
     faceUploadId.value = res.id;
-    showToast('身份证正面上传成功');
+    showSuccessToast('身份证正面上传成功');
   } catch {
     closeToast();
-    showToast('上传失败');
+    showFailToast('上传失败');
   }
 };
 
@@ -288,10 +289,10 @@ const afterReadBack = async (fileItem: { file: File }) => {
     const res = await uploadFile(formData);
     closeToast();
     backUploadId.value = res.id;
-    showToast('身份证反面上传成功');
+    showSuccessToast('身份证反面上传成功');
   } catch {
     closeToast();
-    showToast('上传失败');
+    showFailToast('上传失败');
   }
 };
 
@@ -316,23 +317,38 @@ const onSubmit = () => {
     occupation: occupation.value,
     corporation_id: 1
   };
-  console.log('提交参数:', payload);
-  showToast('表单提交中...');
-  registerIndividual(payload).then((res) => {
-    console.log('提交成功:', res);
-    store.setIndividualId(res.data.id);
-  });
+  loading.value = true;
+  registerIndividual(payload)
+    .then((res) => {
+      console.log('提交成功:', res);
+      store.setIndividualId(res.data.id);
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 };
 
 // 刷新状态
-const refreshStatus = () => {
-  // 模拟刷新：随机一个状态
-  getIndividualStatus(individualId).then((res) => {
-    console.log(res);
+const fetchStatus = async () => {
+  if (!store.individualId) {
+    showFailToast('请提交个体户信息');
+    return;
+  }
+  loading.value = true;
+  try {
+    const res = await getIndividualStatus(store.individualId);
     status.value = res.data.status;
-  });
+    if (status.value === 'signing') {
+      window.location.href = res.data.signing_url;
+    }
+  } catch {
+    showToast('查询失败，请稍后重试');
+  } finally {
+    loading.value = false;
+  }
 };
 
+const throttledFetchStatus = throttle(fetchStatus, 5000, { trailing: false });
 // 重新提交
 const resubmit = () => {
   showToast('已重新提交');
@@ -347,7 +363,7 @@ const edit = () => {
 
 onMounted(() => {
   if (store.individualId) {
-    refreshStatus();
+    throttledFetchStatus();
   }
 });
 </script>
@@ -376,5 +392,11 @@ onMounted(() => {
   padding: 12px;
   background: #fff;
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.status-page {
+  padding: 12px;
+  background-color: #f5f6fa;
+  min-height: 100vh;
 }
 </style>

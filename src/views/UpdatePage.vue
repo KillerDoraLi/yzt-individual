@@ -42,12 +42,6 @@ const phone_number = ref('');
 
 // 提交表单
 const onSubmit = () => {
-  console.log({
-    name: name.value,
-    identification_number: identification_number.value,
-    phone_number: phone_number.value,
-    corporation_id: 1
-  });
   showToast('表单提交，可在这里处理后端请求');
   registerIndividual({
     name: name.value,
