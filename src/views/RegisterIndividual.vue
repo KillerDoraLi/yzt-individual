@@ -39,8 +39,8 @@
         <van-cell-group inset>
           <van-field
             name="faceUploadId"
-            label="身份证正面"
-            :rules="[{ required: true, message: '请上传身份证正面' }]"
+            label="身份证人像面"
+            :rules="[{ required: true, message: '请上传身份证人像面' }]"
           >
             <template #input>
               <van-uploader
@@ -54,8 +54,8 @@
           </van-field>
           <van-field
             name="backUploadId"
-            label="身份证反面"
-            :rules="[{ required: true, message: '请上传身份证反面' }]"
+            label="身份证国徽面"
+            :rules="[{ required: true, message: '请上传身份证国徽面' }]"
           >
             <template #input>
               <van-uploader
@@ -292,7 +292,7 @@ const afterReadFace = async (fileItem: { file: File }) => {
       type: 'success'
     });
   } catch {
-    showToast({ type: 'fail', message: '上传失败', duration: 1000 });
+    showToast({ type: 'fail', message: '上传失败', duration: 5000 });
     closeToast();
   }
 };
@@ -314,7 +314,7 @@ const afterReadBack = async (fileItem: { file: File }) => {
       duration: 2000
     });
   } catch {
-    showToast({ type: 'fail', message: '上传失败', duration: 1000 });
+    showToast({ type: 'fail', message: '上传失败', duration: 5000 });
     closeToast();
   }
 };
