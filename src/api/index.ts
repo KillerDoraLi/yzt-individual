@@ -21,17 +21,7 @@ export function getIndividualStatus(id: string) {
   return request.get(`/individual_contractor/${id}/status`);
 }
 
-// 提交签约
-export function sign(
-  id: string,
-  data: {
-    redirect_url: string;
-  }
-) {
-  return request.post(`/individual_contractor/${id}/submit_signing`, data);
-}
-
 // 失败重试
-export function retry(id: string) {
+export function retry(id: string | number) {
   return request.post(`/individual_contractor/${id}/retry`);
 }

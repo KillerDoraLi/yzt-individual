@@ -1,150 +1,164 @@
 <template>
-  <div v-if="!individualId" class="layout" v-loading="loading">
-    <van-form @submit="onSubmit" class="form-wrapper">
-      <van-divider>基本信息</van-divider>
-      <van-cell-group inset>
-        <van-field
-          v-model="name"
-          name="name"
-          label="姓名"
-          placeholder="请输入姓名"
-          :rules="[
-            { required: true, message: '姓名不能为空' },
-            { validator: validateName, message: '请输入至少2个字符的姓名' }
-          ]"
-        />
-        <van-field
-          v-model="identification_number"
-          name="identification_number"
-          label="身份证号"
-          placeholder="请输入身份证号"
-          :rules="[
-            { required: true, message: '身份证号不能为空' },
-            { validator: validateIdCard, message: '请输入正确的身份证号' }
-          ]"
-        />
-        <van-field
-          v-model="phone_number"
-          name="phone_number"
-          label="手机号"
-          placeholder="请输入手机号"
-          :rules="[
-            { required: true, message: '手机号不能为空' },
-            { validator: validatePhone, message: '请输入正确的手机号' }
-          ]"
-        />
-      </van-cell-group>
-      <van-divider>证件上传</van-divider>
-      <van-cell-group inset>
-        <van-field
-          name="faceUploadId"
-          label="身份证正面"
-          :rules="[{ required: true, message: '请上传身份证正面' }]"
-        >
-          <template #input>
-            <van-uploader
-              v-model="id_face"
-              :after-read="afterReadFace"
-              :max-count="1"
-              reupload
-              :preview-size="80"
-            />
-          </template>
-        </van-field>
-        <van-field
-          name="backUploadId"
-          label="身份证反面"
-          :rules="[{ required: true, message: '请上传身份证反面' }]"
-        >
-          <template #input>
-            <van-uploader
-              v-model="id_back"
-              :after-read="afterReadBack"
-              :max-count="1"
-              reupload
-              :preview-size="80"
-            />
-          </template>
-        </van-field>
-      </van-cell-group>
+  <div>
+    <div v-if="!individualId" class="layout">
+      <van-form @submit="onSubmit" class="form-wrapper">
+        <van-divider>基本信息</van-divider>
+        <van-cell-group inset>
+          <van-field
+            v-model="name"
+            name="name"
+            label="姓名"
+            placeholder="请输入姓名"
+            :rules="[
+              { required: true, message: '姓名不能为空' },
+              { validator: validateName, message: '请输入至少2个字符的姓名' }
+            ]"
+          />
+          <van-field
+            v-model="identification_number"
+            name="identification_number"
+            label="身份证号"
+            placeholder="请输入身份证号"
+            :rules="[
+              { required: true, message: '身份证号不能为空' },
+              { validator: validateIdCard, message: '请输入正确的身份证号' }
+            ]"
+          />
+          <van-field
+            v-model="phone_number"
+            name="phone_number"
+            label="手机号"
+            placeholder="请输入手机号"
+            :rules="[
+              { required: true, message: '手机号不能为空' },
+              { validator: validatePhone, message: '请输入正确的手机号' }
+            ]"
+          />
+        </van-cell-group>
+        <van-divider>证件上传</van-divider>
+        <van-cell-group inset>
+          <van-field
+            name="faceUploadId"
+            label="身份证正面"
+            :rules="[{ required: true, message: '请上传身份证正面' }]"
+          >
+            <template #input>
+              <van-uploader
+                v-model="id_face"
+                :after-read="afterReadFace"
+                :max-count="1"
+                reupload
+                :preview-size="80"
+              />
+            </template>
+          </van-field>
+          <van-field
+            name="backUploadId"
+            label="身份证反面"
+            :rules="[{ required: true, message: '请上传身份证反面' }]"
+          >
+            <template #input>
+              <van-uploader
+                v-model="id_back"
+                :after-read="afterReadBack"
+                :max-count="1"
+                reupload
+                :preview-size="80"
+              />
+            </template>
+          </van-field>
+        </van-cell-group>
 
-      <van-divider>其他信息</van-divider>
-      <van-cell-group inset>
-        <van-field
-          v-model="education"
-          is-link
-          readonly
-          label="学历"
-          placeholder="点击选择学历"
-          @click="openPicker('education')"
+        <van-divider>其他信息</van-divider>
+        <van-cell-group inset>
+          <van-field
+            v-model="education"
+            is-link
+            readonly
+            label="学历"
+            placeholder="点击选择学历"
+            @click="openPicker('education')"
+          />
+          <van-field
+            v-model="political"
+            is-link
+            readonly
+            label="政治面貌"
+            placeholder="点击选择政治面貌"
+            @click="openPicker('political')"
+          />
+          <van-field
+            v-model="occupation"
+            is-link
+            readonly
+            label="职业"
+            placeholder="点击选择职业"
+            @click="openPicker('occupation')"
+          />
+        </van-cell-group>
+        <div class="submit-bar">
+          <van-button round block type="primary" native-type="submit">
+            提交个体户签约
+          </van-button>
+        </div>
+      </van-form>
+      <van-popup v-model:show="showPicker" position="bottom" round>
+        <van-picker
+          :columns="currentColumns"
+          :model-value="pickerValue"
+          title="请选择"
+          confirm-button-text="确定"
+          cancel-button-text="取消"
+          @confirm="onConfirm"
+          @cancel="showPicker = false"
         />
-        <van-field
-          v-model="political"
-          is-link
-          readonly
-          label="政治面貌"
-          placeholder="点击选择政治面貌"
-          @click="openPicker('political')"
-        />
-        <van-field
-          v-model="occupation"
-          is-link
-          readonly
-          label="职业"
-          placeholder="点击选择职业"
-          @click="openPicker('occupation')"
-        />
-      </van-cell-group>
-      <div class="submit-bar">
-        <van-button round block type="primary" native-type="submit">
-          提交个体户签约
-        </van-button>
-      </div>
-    </van-form>
-    <van-popup v-model:show="showPicker" position="bottom" round>
-      <van-picker
-        :columns="currentColumns"
-        :model-value="pickerValue"
-        title="请选择"
-        confirm-button-text="确定"
-        cancel-button-text="取消"
-        @confirm="onConfirm"
-        @cancel="showPicker = false"
-      />
-    </van-popup>
-  </div>
+      </van-popup>
+    </div>
 
-  <div class="status-page" v-loading="loading">
-    <van-empty :description="`您的个体户签约状态为:${statusMap[status]}`">
-      <div>
-        <template v-if="status === 'failed'">
+    <div v-if="individualId && status" class="status-page">
+      <van-empty>
+        <div slot="description">
           <p style="text-align: center; font-size: 13px; color: #666">
-            若信息无误，请重新提交；若信息有误，请修改后重新提交
+            {{ `您的个体户签约状态为：${statusText}` }}
           </p>
-          <div style="display: flex; justify-content: center">
-            <van-button
-              type="primary"
-              style="margin-right: 12px"
-              size="small"
-              @click="resubmit"
-            >
-              重新提交
-            </van-button>
-            <van-button style="margin-left: 12px" size="small" @click="edit">
+          <p v-if="status === 'failed'" style="font-size: 14px">
+            <van-highlight
+              :keywords="[errorMessage]"
+              :source-string="`错误信息：${errorMessage}`"
+            />
+          </p>
+        </div>
+        <div>
+          <template v-if="status === 'failed'">
+            <p style="text-align: center; font-size: 13px; color: #666">
+              若信息无误，请重新提交；若信息有误，请修改后重新提交
+            </p>
+            <div style="display: flex; justify-content: center">
+              <van-button
+                type="primary"
+                style="margin-right: 12px"
+                size="small"
+                @click="resubmit"
+              >
+                重新提交
+              </van-button>
+              <!-- <van-button style="margin-left: 12px" size="small" @click="edit">
               修改信息
-            </van-button>
-          </div>
-        </template>
-        <van-button
-          type="primary"
-          plain
-          style="width: 160px; display: block; margin: 40px auto"
-          @click="throttledFetchStatus"
-        >
-          刷新状态
-        </van-button>
-      </div>
-    </van-empty>
+            </van-button> -->
+            </div>
+          </template>
+          <van-button
+            v-if="status !== 'completed'"
+            type="primary"
+            plain
+            style="width: 160px; display: block; margin: 40px auto"
+            @click="throttledFetchStatus"
+          >
+            刷新状态
+          </van-button>
+        </div>
+      </van-empty>
+    </div>
   </div>
 </template>
 
@@ -157,7 +171,13 @@ import {
   showSuccessToast,
   showFailToast
 } from 'vant';
-import { uploadFile, registerIndividual, getIndividualStatus } from '@/api';
+
+import {
+  uploadFile,
+  registerIndividual,
+  getIndividualStatus,
+  retry
+} from '@/api';
 import { useIndividualStore } from '@/store/individual';
 import { throttle } from 'lodash-es';
 import 'vant/lib/toast/style';
@@ -175,8 +195,6 @@ const education = ref('');
 const political = ref('');
 const occupation = ref('');
 
-const loading = ref(false);
-
 const id_face = ref<any[]>([]);
 const id_back = ref<any[]>([]);
 
@@ -190,8 +208,10 @@ const pickerValue = ref([]);
 const currentColumns = ref<any[]>([]);
 let currentField: 'education' | 'political' | 'occupation' | null = null;
 const status = ref<
-  'submitted' | 'signing' | 'completed' | 'failed' | 'cancelled'
->('failed');
+  'submitted' | 'signing' | 'completed' | 'failed' | 'cancelled' | ''
+>('');
+
+const errorMessage = ref('');
 
 // 状态文字映射
 const statusMap: Record<typeof status.value, string> = {
@@ -199,19 +219,11 @@ const statusMap: Record<typeof status.value, string> = {
   signing: '签约中',
   completed: '已完成',
   failed: '签约失败',
-  cancelled: '已取消'
-};
-// tag 类型映射
-const tagTypeMap: Record<typeof status.value, string> = {
-  submitted: 'primary',
-  signing: 'warning',
-  completed: 'success',
-  failed: 'danger',
-  cancelled: 'default'
+  cancelled: '已取消',
+  '': ''
 };
 
 const statusText = computed(() => statusMap[status.value]);
-const statusTagType = computed(() => tagTypeMap[status.value]);
 
 // 选项数据
 const edu_columns = [
@@ -317,14 +329,16 @@ const onSubmit = () => {
     occupation: occupation.value,
     corporation_id: 1
   };
-  loading.value = true;
+  showLoadingToast({
+    message: '提交中...',
+    forbidClick: false
+  });
   registerIndividual(payload)
     .then((res) => {
-      console.log('提交成功:', res);
       store.setIndividualId(res.data.id);
     })
     .finally(() => {
-      loading.value = false;
+      closeToast();
     });
 };
 
@@ -334,25 +348,44 @@ const fetchStatus = async () => {
     showFailToast('请提交个体户信息');
     return;
   }
-  loading.value = true;
+  showLoadingToast({
+    message: '加载中...',
+    forbidClick: false
+  });
+
   try {
     const res = await getIndividualStatus(store.individualId);
     status.value = res.data.status;
+    errorMessage.value = res.data.error_message || '8888';
     if (status.value === 'signing') {
       window.location.href = res.data.signing_url;
     }
   } catch {
     showToast('查询失败，请稍后重试');
   } finally {
-    loading.value = false;
+    closeToast();
   }
 };
 
 const throttledFetchStatus = throttle(fetchStatus, 5000, { trailing: false });
 // 重新提交
 const resubmit = () => {
-  showToast('已重新提交');
-  status.value = 'submitted';
+  showLoadingToast({
+    message: '重新提交中...',
+    forbidClick: false
+  });
+  if (!store.individualId) {
+    showFailToast('');
+    return;
+  }
+  retry(store.individualId)
+    .then(() => {
+      showSuccessToast('重新提交成功');
+      throttledFetchStatus();
+    })
+    .finally(() => {
+      closeToast();
+    });
 };
 
 // 修改信息
