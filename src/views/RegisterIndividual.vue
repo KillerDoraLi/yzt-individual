@@ -121,7 +121,7 @@
           <p style="text-align: center; font-size: 13px; color: #666">
             {{ `您的个体户签约状态为：${statusText}` }}
           </p>
-          <p v-if="status === 'failed'" style="font-size: 14px">
+          <p v-if="status === 'failed' && errorMessage" style="font-size: 14px">
             <van-highlight
               :keywords="[errorMessage]"
               :source-string="`错误信息：${errorMessage}`"
@@ -164,13 +164,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
-import {
-  showToast,
-  showLoadingToast,
-  closeToast,
-  showSuccessToast,
-  showFailToast
-} from 'vant';
+import { showToast, closeToast } from 'vant';
 
 import {
   uploadFile,
@@ -180,12 +174,11 @@ import {
 } from '@/api';
 import { useIndividualStore } from '@/store/individual';
 import { throttle } from 'lodash-es';
-import 'vant/lib/toast/style';
 
 const store = useIndividualStore();
 
 // 个体户id
-const individualId = store.individualId;
+const individualId = computed(() => store.individualId);
 
 // 表单字段
 const name = ref('');
@@ -208,10 +201,19 @@ const pickerValue = ref([]);
 const currentColumns = ref<any[]>([]);
 let currentField: 'education' | 'political' | 'occupation' | null = null;
 const status = ref<
-  'submitted' | 'signing' | 'completed' | 'failed' | 'cancelled' | ''
+  | 'submitted'
+  | 'signing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'pending'
+  | ''
 >('');
 
 const errorMessage = ref('');
+
+// 是否已重定向 标志位，避免循环刷新
+const hasRedirected = ref(false);
 
 // 状态文字映射
 const statusMap: Record<typeof status.value, string> = {
@@ -220,6 +222,7 @@ const statusMap: Record<typeof status.value, string> = {
   completed: '已完成',
   failed: '签约失败',
   cancelled: '已取消',
+  pending: '处理中',
   '': ''
 };
 
@@ -276,17 +279,21 @@ const onConfirm = ({ selectedValues, selectedOptions }) => {
 const afterReadFace = async (fileItem: { file: File }) => {
   if (!fileItem.file) return;
   try {
-    showLoadingToast({ message: '上传中...', forbidClick: true });
+    showToast({ type: 'loading', message: '上传中...', forbidClick: true });
     const formData = new FormData();
     formData.append('file', fileItem.file);
     formData.append('resource_type', 'register');
     const res = await uploadFile(formData);
     closeToast();
     faceUploadId.value = res.id;
-    showSuccessToast('身份证正面上传成功');
+    showToast({
+      message: '身份证正面上传成功',
+      duration: 1000,
+      type: 'success'
+    });
   } catch {
+    showToast({ type: 'fail', message: '上传失败', duration: 1000 });
     closeToast();
-    showFailToast('上传失败');
   }
 };
 
@@ -294,17 +301,21 @@ const afterReadFace = async (fileItem: { file: File }) => {
 const afterReadBack = async (fileItem: { file: File }) => {
   if (!fileItem.file) return;
   try {
-    showLoadingToast({ message: '上传中...', forbidClick: true });
+    showToast({ type: 'loading', message: '上传中...', forbidClick: true });
     const formData = new FormData();
     formData.append('file', fileItem.file);
     formData.append('resource_type', 'register');
     const res = await uploadFile(formData);
     closeToast();
     backUploadId.value = res.id;
-    showSuccessToast('身份证反面上传成功');
+    showToast({
+      type: 'success',
+      message: '身份证反面上传成功',
+      duration: 2000
+    });
   } catch {
+    showToast({ type: 'fail', message: '上传失败', duration: 1000 });
     closeToast();
-    showFailToast('上传失败');
   }
 };
 
@@ -329,13 +340,18 @@ const onSubmit = () => {
     occupation: occupation.value,
     corporation_id: 1
   };
-  showLoadingToast({
+  showToast({
+    type: 'loading',
     message: '提交中...',
     forbidClick: false
   });
+
   registerIndividual(payload)
     .then((res) => {
       store.setIndividualId(res.data.id);
+
+      showToast('个体户信息提交成功');
+      fetchStatus();
     })
     .finally(() => {
       closeToast();
@@ -345,10 +361,15 @@ const onSubmit = () => {
 // 刷新状态
 const fetchStatus = async () => {
   if (!store.individualId) {
-    showFailToast('请提交个体户信息');
+    showToast({
+      type: 'fail',
+      message: '请提交个体户信息',
+      duration: 2000
+    });
     return;
   }
-  showLoadingToast({
+  showToast({
+    type: 'loading',
     message: '加载中...',
     forbidClick: false
   });
@@ -356,32 +377,39 @@ const fetchStatus = async () => {
   try {
     const res = await getIndividualStatus(store.individualId);
     status.value = res.data.status;
-    errorMessage.value = res.data.error_message || '8888';
-    if (status.value === 'signing') {
+    errorMessage.value = res.data.error_message || '';
+    if (
+      status.value === 'signing' &&
+      !hasRedirected.value &&
+      res.data.signing_url
+    ) {
+      hasRedirected.value = true;
       window.location.href = res.data.signing_url;
     }
   } catch {
     showToast('查询失败，请稍后重试');
+    store.clearIndividualId();
   } finally {
     closeToast();
   }
 };
 
-const throttledFetchStatus = throttle(fetchStatus, 5000, { trailing: false });
+const throttledFetchStatus = throttle(fetchStatus, 3000, { trailing: false });
 // 重新提交
 const resubmit = () => {
-  showLoadingToast({
+  if (!store.individualId) {
+    return;
+  }
+  showToast({
+    type: 'loading',
     message: '重新提交中...',
     forbidClick: false
   });
-  if (!store.individualId) {
-    showFailToast('');
-    return;
-  }
+
   retry(store.individualId)
     .then(() => {
-      showSuccessToast('重新提交成功');
-      throttledFetchStatus();
+      showToast({ type: 'success', message: '重新提交成功' });
+      fetchStatus();
     })
     .finally(() => {
       closeToast();
@@ -396,7 +424,7 @@ const edit = () => {
 
 onMounted(() => {
   if (store.individualId) {
-    throttledFetchStatus();
+    fetchStatus();
   }
 });
 </script>

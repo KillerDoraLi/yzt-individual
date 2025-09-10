@@ -3,21 +3,21 @@ import { createRouter, RouteRecordRaw, createWebHistory } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/layout',
+    path: '/',
     name: 'Layout',
     component: () => import('@/components/layout.vue'),
-    redirect: '/',
+    redirect: '/individual/register',
     children: [
+      // {
+      //   path: '/',
+      //   name: 'Home',
+      //   component: () => import('@/views/HomePage.vue'),
+      //   meta: {
+      //     title: '首页'
+      //   }
+      // },
       {
-        path: '/',
-        name: 'Home',
-        component: () => import('@/views/HomePage.vue'),
-        meta: {
-          title: '首页'
-        }
-      },
-      {
-        path: '/register',
+        path: '/individual/register',
         name: 'Register',
         component: () => import('@/views/RegisterIndividual.vue'),
         meta: {

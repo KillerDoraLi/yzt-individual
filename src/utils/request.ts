@@ -4,7 +4,7 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig
 } from 'axios';
-import { showFailToast } from 'vant';
+import { showToast } from 'vant';
 
 const service: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -33,13 +33,21 @@ service.interceptors.response.use(
     const res = response.data;
     // 约定：后端返回 { code, data, message }
     if (response.status !== 200) {
-      showFailToast(res.message || '请求出错');
+      showToast({
+        type: 'fail',
+        message: res.message,
+        duration: 3000
+      });
       return Promise.reject(res);
     }
     return res;
   },
   (error) => {
-    showFailToast(error.response?.data?.message || '网络错误');
+    showToast({
+      type: 'fail',
+      message: error.response?.data?.message || '网络错误',
+      duration: 3000
+    });
     return Promise.reject(error);
   }
 );

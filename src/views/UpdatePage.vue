@@ -33,8 +33,8 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue';
-import { showToast } from 'vant';
 import { registerIndividual } from '@/api'; // 你封装的上传接口
+import { showToast } from 'vant';
 
 const name = ref('');
 const identification_number = ref('');
