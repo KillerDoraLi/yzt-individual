@@ -165,7 +165,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { showToast, closeToast } from 'vant';
-
+import { useRoute } from 'vue-router';
 import {
   uploadFile,
   registerIndividual,
@@ -180,6 +180,8 @@ const store = useIndividualStore();
 // 个体户id
 const individualId = computed(() => store.individualId);
 
+const completedAt = computed(() => store.completedAt);
+
 // 表单字段
 const name = ref('');
 const identification_number = ref('');
@@ -188,8 +190,8 @@ const education = ref('');
 const political = ref('');
 const occupation = ref('');
 
-const id_face = ref<any[]>([]);
-const id_back = ref<any[]>([]);
+const id_face = ref<unknown[]>([]);
+const id_back = ref<unknown[]>([]);
 
 // 上传后端返回的文件 ID
 const faceUploadId = ref('');
@@ -198,7 +200,7 @@ const backUploadId = ref('');
 // Picker 状态
 const showPicker = ref(false);
 const pickerValue = ref([]);
-const currentColumns = ref<any[]>([]);
+const currentColumns = ref<unknown[]>([]);
 let currentField: 'education' | 'political' | 'occupation' | null = null;
 const status = ref<
   | 'submitted'
@@ -253,6 +255,7 @@ const occupational_columns = [
   { text: '其他', value: 'OTHER' }
 ];
 
+const route = useRoute();
 // 打开选择器
 const openPicker = (field: 'education' | 'political' | 'occupation') => {
   currentField = field;
@@ -293,6 +296,9 @@ const afterReadFace = async (fileItem: { file: File }) => {
     });
   } catch {
     showToast({ type: 'fail', message: '上传失败', duration: 5000 });
+    // 上传失败后不显示
+    faceUploadId.value = '';
+    id_face.value = [];
     closeToast();
   }
 };
@@ -316,6 +322,9 @@ const afterReadBack = async (fileItem: { file: File }) => {
   } catch {
     showToast({ type: 'fail', message: '上传失败', duration: 5000 });
     closeToast();
+    // 上传失败后不显示
+    backUploadId.value = '';
+    id_back.value = [];
   }
 };
 
@@ -378,10 +387,14 @@ const fetchStatus = async () => {
     const res = await getIndividualStatus(store.individualId);
     status.value = res.data.status;
     errorMessage.value = res.data.error_message || '';
+    if (status.value !== 'signing') {
+      store.clearCompletedAt();
+    }
     if (
       status.value === 'signing' &&
       !hasRedirected.value &&
-      res.data.signing_url
+      res.data.signing_url &&
+      !completedAt.value
     ) {
       hasRedirected.value = true;
       window.location.href = res.data.signing_url;
@@ -417,12 +430,17 @@ const resubmit = () => {
 };
 
 // 修改信息
-const edit = () => {
-  showToast('跳转到修改信息页面');
-  // 这里可以用 router.push('/edit')
-};
+// const edit = () => {
+//   showToast('跳转到修改信息页面');
+//   // 这里可以用 router.push('/edit')
+// };
 
 onMounted(() => {
+  const completedAt = route.query.completedAt;
+  if (completedAt) {
+    // 有值就记录到 store
+    store.setCompletedAt(completedAt as string); // 假设你在 store 写了 setCompletedAt 方法
+  }
   if (store.individualId) {
     fetchStatus();
   }
