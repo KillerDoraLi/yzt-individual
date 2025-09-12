@@ -204,7 +204,10 @@ const currentColumns = ref<unknown[]>([]);
 let currentField: 'education' | 'political' | 'occupation' | null = null;
 const status = ref<
   | 'submitted'
-  | 'signing'
+  | 'first_signing'
+  | 'business_registration'
+  | 'tax_registration'
+  | 'second_signing'
   | 'completed'
   | 'failed'
   | 'cancelled'
@@ -220,7 +223,10 @@ const hasRedirected = ref(false);
 // 状态文字映射
 const statusMap: Record<typeof status.value, string> = {
   submitted: '已提交',
-  signing: '签约中',
+  first_signing: '一次签约中',
+  second_signing: '二次签约中',
+  business_registration: '工商登记中',
+  tax_registration: '税务登记中',
   completed: '已完成',
   failed: '签约失败',
   cancelled: '已取消',
@@ -387,11 +393,11 @@ const fetchStatus = async () => {
     const res = await getIndividualStatus(store.individualId);
     status.value = res.data.status;
     errorMessage.value = res.data.error_message || '';
-    if (status.value !== 'signing') {
+    if (status.value !== 'first_signing' && status.value !== 'second_signing') {
       store.clearCompletedAt();
     }
     if (
-      status.value === 'signing' &&
+      (status.value === 'first_signing' || status.value === 'second_signing') &&
       !hasRedirected.value &&
       res.data.signing_url &&
       !completedAt.value
