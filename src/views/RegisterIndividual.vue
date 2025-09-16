@@ -1,5 +1,6 @@
 <template>
   <div>
+    <!-- 表单区域 -->
     <div v-if="!individualId" class="layout">
       <van-form @submit="onSubmit" class="form-wrapper">
         <van-divider>基本信息</van-divider>
@@ -35,6 +36,7 @@
             ]"
           />
         </van-cell-group>
+
         <van-divider>证件上传</van-divider>
         <van-cell-group inset>
           <van-field
@@ -96,12 +98,15 @@
             @click="openPicker('occupation')"
           />
         </van-cell-group>
+
         <div class="submit-bar">
           <van-button round block type="primary" native-type="submit">
             提交个体户签约
           </van-button>
         </div>
       </van-form>
+
+      <!-- Picker -->
       <van-popup v-model:show="showPicker" position="bottom" round>
         <van-picker
           :columns="currentColumns"
@@ -115,25 +120,43 @@
       </van-popup>
     </div>
 
+    <!-- 状态页 -->
     <div v-else-if="individualId && status" class="status-page">
-      <van-empty>
+      <van-empty :image="emptyImg" :image-size="[140, 100]">
         <div slot="description">
-          <p style="text-align: center; font-size: 13px; color: #666">
+          <p v-if="status !== 'completed'" class="status-text">
             {{ `您的个体户签约状态为：${statusText}` }}
           </p>
-          <p v-if="status === 'failed' && errorMessage" style="font-size: 14px">
+          <p class="hint-text">
             <van-highlight
+              v-if="status === 'first_signing' || status === 'second_signing'"
+              unhighlight-class="highlight-text-normal"
+              :keywords="['', '19065163814']"
+              source-string="系统将在 30s 后跳转到签约页面，请您耐心等待～  若无法跳转请点击【刷新状态】按钮手动刷新或致电 19065163814 联系管理员。"
+            />
+          </p>
+          <p v-if="status === 'failed' && errorMessage" class="error-text">
+            <van-highlight
+              unhighlight-class="highlight-text-normal"
               :keywords="[errorMessage]"
               :source-string="`错误信息：${errorMessage}`"
             />
           </p>
+          <p v-if="status === 'completed'" class="success-text">
+            <van-highlight
+              unhighlight-class="highlight-text-normal"
+              :keywords="['电子营业执照', '19065163814']"
+              :source-string="`尊敬的${username}，您好！您提交的注册申请已完成，可前往个人实名登记的微信/支付宝查询“电子营业执照”小程序查看详细信息。如有需要可致电 19065163814，感谢您的支持！`"
+            />
+          </p>
         </div>
+
         <div>
           <template v-if="status === 'failed'">
-            <p style="text-align: center; font-size: 13px; color: #666">
-              若信息无误，请重新提交；若信息有误，请修改后重新提交
+            <p class="tip-text">
+              若信息无误，请重新提交；若信息有误，请致电 19065163814 咨询。
             </p>
-            <div style="display: flex; justify-content: center">
+            <div class="btn-group">
               <van-button
                 type="primary"
                 style="margin-right: 12px"
@@ -142,16 +165,13 @@
               >
                 重新提交
               </van-button>
-              <!-- <van-button style="margin-left: 12px" size="small" @click="edit">
-              修改信息
-            </van-button> -->
             </div>
           </template>
           <van-button
             v-if="status !== 'completed'"
             type="primary"
             plain
-            style="width: 160px; display: block; margin: 40px auto"
+            class="refresh-btn"
             @click="throttledFetchStatus"
           >
             刷新状态
@@ -160,14 +180,16 @@
       </van-empty>
     </div>
 
+    <!-- 空状态 -->
     <van-empty v-else description="您的注册状态为空，请联系管理员" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
-import { showToast, closeToast } from 'vant';
+import { computed, onMounted, ref, watch, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { showToast, closeToast } from 'vant';
+import { throttle } from 'lodash-es';
 import {
   uploadFile,
   registerIndividual,
@@ -175,70 +197,31 @@ import {
   retry
 } from '@/api';
 import { useIndividualStore } from '@/store/individual';
-import { throttle } from 'lodash-es';
+import emptyImg from '@/assets/empty.png';
 
+/* -------------------- Store -------------------- */
 const store = useIndividualStore();
-
-// 个体户id
 const individualId = computed(() => store.individualId);
-
 const completedAt = computed(() => store.completedAt);
 
-// 表单字段
+/* -------------------- 表单字段 -------------------- */
 const name = ref('');
 const identification_number = ref('');
 const phone_number = ref('');
 const education = ref('');
 const political = ref('');
 const occupation = ref('');
-
 const id_face = ref<unknown[]>([]);
 const id_back = ref<unknown[]>([]);
-
-// 上传后端返回的文件 ID
 const faceUploadId = ref('');
 const backUploadId = ref('');
 
-// Picker 状态
+/* -------------------- Picker -------------------- */
 const showPicker = ref(false);
 const pickerValue = ref([]);
 const currentColumns = ref<unknown[]>([]);
 let currentField: 'education' | 'political' | 'occupation' | null = null;
-const status = ref<
-  | 'submitted'
-  | 'first_signing'
-  | 'business_registration'
-  | 'tax_registration'
-  | 'second_signing'
-  | 'completed'
-  | 'failed'
-  | 'cancelled'
-  | 'pending'
-  | ''
->('');
 
-const errorMessage = ref('');
-
-// 是否已重定向 标志位，避免循环刷新
-const hasRedirected = ref(false);
-
-// 状态文字映射
-const statusMap: Record<typeof status.value, string> = {
-  submitted: '已提交',
-  first_signing: '一次签约中',
-  second_signing: '二次签约中',
-  business_registration: '工商登记中',
-  tax_registration: '税务登记中',
-  completed: '已完成',
-  failed: '签约失败',
-  cancelled: '已取消',
-  pending: '处理中',
-  '': ''
-};
-
-const statusText = computed(() => statusMap[status.value]);
-
-// 选项数据
 const edu_columns = [
   { text: '小学', value: 'PRIMARY_SCHOOL' },
   { text: '初中', value: 'MIDDLE_SCHOOL' },
@@ -263,8 +246,6 @@ const occupational_columns = [
   { text: '其他', value: 'OTHER' }
 ];
 
-const route = useRoute();
-// 打开选择器
 const openPicker = (field: 'education' | 'political' | 'occupation') => {
   currentField = field;
   if (field === 'education') currentColumns.value = edu_columns;
@@ -272,21 +253,16 @@ const openPicker = (field: 'education' | 'political' | 'occupation') => {
   if (field === 'occupation') currentColumns.value = occupational_columns;
   showPicker.value = true;
 };
-
-// Picker 确认
 const onConfirm = ({ selectedValues, selectedOptions }: any) => {
-  if (currentField === 'education') {
-    education.value = selectedOptions[0]?.text;
-  } else if (currentField === 'political') {
-    political.value = selectedOptions[0]?.text;
-  } else if (currentField === 'occupation') {
+  if (currentField === 'education') education.value = selectedOptions[0]?.text;
+  if (currentField === 'political') political.value = selectedOptions[0]?.text;
+  if (currentField === 'occupation')
     occupation.value = selectedOptions[0]?.text;
-  }
   pickerValue.value = selectedValues;
   showPicker.value = false;
 };
 
-// 上传正面
+/* -------------------- 上传逻辑 -------------------- */
 const afterReadFace = async (fileItem: { file: File }) => {
   if (!fileItem.file) return;
   try {
@@ -304,14 +280,11 @@ const afterReadFace = async (fileItem: { file: File }) => {
     });
   } catch {
     showToast({ type: 'fail', message: '上传失败', duration: 5000 });
-    // 上传失败后不显示
     faceUploadId.value = '';
     id_face.value = [];
     closeToast();
   }
 };
-
-// 上传反面
 const afterReadBack = async (fileItem: { file: File }) => {
   if (!fileItem.file) return;
   try {
@@ -329,76 +302,102 @@ const afterReadBack = async (fileItem: { file: File }) => {
     });
   } catch {
     showToast({ type: 'fail', message: '上传失败', duration: 5000 });
-    closeToast();
-    // 上传失败后不显示
     backUploadId.value = '';
     id_back.value = [];
+    closeToast();
   }
 };
 
-// ✅ 表单校验方法
+/* -------------------- 表单校验 -------------------- */
 const validateName = (val: string) => val && val.length >= 2;
-const validatePhone = (val: string) => /^1[3-9]\d{9}$/.test(val); // 中国大陆手机号
+const validatePhone = (val: string) => /^1[3-9]\d{9}$/.test(val);
 const validateIdCard = (val: string) =>
   /^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(
     val
   );
 
-// 提交表单
-const onSubmit = () => {
-  const payload = {
-    name: name.value,
-    identification_number: identification_number.value,
-    phone_number: phone_number.value,
-    id_card_front_id: faceUploadId.value,
-    id_card_back_id: backUploadId.value,
-    education: education.value,
-    political: political.value,
-    occupation: occupation.value,
-    corporation_id: 1
-  };
-  showToast({
-    type: 'loading',
-    message: '提交中...',
-    forbidClick: false
-  });
+/* -------------------- 状态管理 -------------------- */
+const status = ref<
+  | 'submitted'
+  | 'first_signing'
+  | 'business_registration'
+  | 'tax_registration'
+  | 'second_signing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'pending'
+  | ''
+>('');
+const errorMessage = ref('');
+const username = ref('');
+const hasRedirected = ref(false);
 
-  registerIndividual(payload)
-    .then((res) => {
-      store.setIndividualId(res.data.id);
-      showToast('个体户信息提交成功');
-      fetchStatus();
-    })
-    .finally(() => {
-      closeToast();
-    });
+const statusMap: Record<typeof status.value, string> = {
+  submitted: '已提交',
+  first_signing: '首次签约中',
+  second_signing: '二次签约中',
+  business_registration: '工商登记中',
+  tax_registration: '税务登记中',
+  completed: '已完成',
+  failed: '签约失败',
+  cancelled: '已取消',
+  pending: '处理中',
+  '': ''
 };
+const statusText = computed(() => statusMap[status.value]);
 
-// 刷新状态
+/* 定时刷新逻辑 */
+let intervalId: number | null = null;
+let refreshCount = 0;
+const startAutoRefresh = () => {
+  if (intervalId) return;
+  refreshCount = 0;
+  intervalId = window.setInterval(async () => {
+    if (refreshCount >= 10) {
+      clearAutoRefresh();
+      return;
+    }
+    refreshCount++;
+    await fetchStatus();
+  }, 10000);
+};
+const clearAutoRefresh = () => {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+};
+watch(status, (newStatus) => {
+  if (
+    newStatus === 'first_signing' ||
+    newStatus === 'second_signing' ||
+    newStatus === 'submitted'
+  ) {
+    startAutoRefresh();
+  } else {
+    clearAutoRefresh();
+  }
+});
+
+/* 查询状态 */
 const fetchStatus = async () => {
   if (!store.individualId) {
     store.clearCompletedAt();
     hasRedirected.value = false;
-    showToast({
-      type: 'fail',
-      message: '请提交个体户信息',
-      duration: 2000
-    });
+    showToast({ type: 'fail', message: '请提交个体户信息', duration: 2000 });
     return;
   }
-  showToast({
-    type: 'loading',
-    message: '加载中...',
-    forbidClick: false
-  });
-
+  showToast({ type: 'loading', message: '加载中...', forbidClick: false });
   try {
     const res = await getIndividualStatus(store.individualId);
     if (status.value !== res.data.status) {
       hasRedirected.value = false;
       store.clearCompletedAt();
     }
+    // status.value = 'second_signing';
     status.value = res.data.status;
+    username.value = res.data.name;
     errorMessage.value = res.data.error_message || '';
     if (status.value !== 'first_signing' && status.value !== 'second_signing') {
       store.clearCompletedAt();
@@ -421,42 +420,53 @@ const fetchStatus = async () => {
     closeToast();
   }
 };
-
 const throttledFetchStatus = throttle(fetchStatus, 3000, { trailing: false });
-// 重新提交
+
+/* 重新提交 */
 const resubmit = () => {
   if (!store.individualId) {
     store.clearCompletedAt();
     hasRedirected.value = false;
     return;
   }
-  showToast({
-    type: 'loading',
-    message: '重新提交中...',
-    forbidClick: false
-  });
-
+  showToast({ type: 'loading', message: '重新提交中...', forbidClick: false });
   retry(store.individualId)
     .then(() => {
       showToast({ type: 'success', message: '重新提交成功' });
       fetchStatus();
     })
-    .finally(() => {
-      closeToast();
-    });
+    .finally(() => closeToast());
 };
 
-// 修改信息
-// const edit = () => {
-//   showToast('跳转到修改信息页面');
-//   // 这里可以用 router.push('/edit')
-// };
+/* -------------------- 提交表单 -------------------- */
+const onSubmit = () => {
+  const payload = {
+    name: name.value,
+    identification_number: identification_number.value,
+    phone_number: phone_number.value,
+    id_card_front_id: faceUploadId.value,
+    id_card_back_id: backUploadId.value,
+    education: education.value,
+    political: political.value,
+    occupation: occupation.value,
+    corporation_id: 1
+  };
+  showToast({ type: 'loading', message: '提交中...', forbidClick: false });
+  registerIndividual(payload)
+    .then((res) => {
+      store.setIndividualId(res.data.id);
+      showToast('个体户信息提交成功');
+      fetchStatus();
+    })
+    .finally(() => closeToast());
+};
 
+/* -------------------- 生命周期 -------------------- */
+const route = useRoute();
 onMounted(() => {
   const completedAt = route.query.completedAt;
   if (completedAt) {
-    // 有值就记录到 store
-    store.setCompletedAt(completedAt as string); // 假设你在 store 写了 setCompletedAt 方法
+    store.setCompletedAt(completedAt as string);
   } else {
     store.clearCompletedAt();
     hasRedirected.value = false;
@@ -465,31 +475,58 @@ onMounted(() => {
     fetchStatus();
   }
 });
+onUnmounted(() => clearAutoRefresh());
 </script>
+
 <style scoped>
 .layout {
   background-color: #f7f8fa;
   min-height: 100vh;
-  /* padding-bottom: 80px; */
 }
-
 .form-wrapper {
   padding: 12px 0;
 }
-
 .van-divider {
   color: #666;
   font-size: 14px;
   margin: 12px 0;
 }
-
 .submit-bar {
   margin: 24px 12px 0;
 }
-
 .status-page {
-  padding: 12px;
+  padding: 60px 12px 0;
   background-color: #f5f6fa;
-  height: 100vh;
+  height: calc(100vh - 60px);
+}
+.status-text {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+}
+.error-text,
+.hint-text,
+.success-text {
+  font-size: 14px;
+  text-indent: 2em;
+  line-height: 1.6;
+}
+.tip-text {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+}
+.btn-group {
+  display: flex;
+  justify-content: center;
+}
+.refresh-btn {
+  width: 160px;
+  display: block;
+  margin: 40px auto;
+}
+.highlight-text-normal {
+  color: #666;
+  line-height: 1.6;
 }
 </style>
