@@ -115,7 +115,7 @@
       </van-popup>
     </div>
 
-    <div v-if="individualId && status" class="status-page">
+    <div v-else-if="individualId && status" class="status-page">
       <van-empty>
         <div slot="description">
           <p style="text-align: center; font-size: 13px; color: #666">
@@ -159,6 +159,8 @@
         </div>
       </van-empty>
     </div>
+
+    <van-empty v-else description="您的注册状态为空，请联系管理员" />
   </div>
 </template>
 
@@ -364,7 +366,6 @@ const onSubmit = () => {
   registerIndividual(payload)
     .then((res) => {
       store.setIndividualId(res.data.id);
-
       showToast('个体户信息提交成功');
       fetchStatus();
     })
@@ -376,6 +377,8 @@ const onSubmit = () => {
 // 刷新状态
 const fetchStatus = async () => {
   if (!store.individualId) {
+    store.clearCompletedAt();
+    hasRedirected.value = false;
     showToast({
       type: 'fail',
       message: '请提交个体户信息',
@@ -408,6 +411,8 @@ const fetchStatus = async () => {
   } catch {
     showToast('查询失败，请稍后重试');
     store.clearIndividualId();
+    store.clearCompletedAt();
+    hasRedirected.value = false;
   } finally {
     closeToast();
   }
@@ -417,6 +422,8 @@ const throttledFetchStatus = throttle(fetchStatus, 3000, { trailing: false });
 // 重新提交
 const resubmit = () => {
   if (!store.individualId) {
+    store.clearCompletedAt();
+    hasRedirected.value = false;
     return;
   }
   showToast({
@@ -446,6 +453,9 @@ onMounted(() => {
   if (completedAt) {
     // 有值就记录到 store
     store.setCompletedAt(completedAt as string); // 假设你在 store 写了 setCompletedAt 方法
+  } else {
+    store.clearCompletedAt();
+    hasRedirected.value = false;
   }
   if (store.individualId) {
     fetchStatus();
@@ -456,7 +466,7 @@ onMounted(() => {
 .layout {
   background-color: #f7f8fa;
   min-height: 100vh;
-  padding-bottom: 80px; /* 给底部按钮留空间 */
+  /* padding-bottom: 80px; */
 }
 
 .form-wrapper {
@@ -470,18 +480,19 @@ onMounted(() => {
 }
 
 .submit-bar {
-  position: fixed;
+  /* position: fixed;
   bottom: 0;
   left: 0;
-  right: 0;
-  padding: 12px;
-  background: #fff;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06);
+  right: 0; */
+  /* padding: 12px; */
+  /* background: #fff; */
+  /* box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06); */
+  margin: 24px 12px 0;
 }
 
 .status-page {
   padding: 12px;
   background-color: #f5f6fa;
-  min-height: 100vh;
+  height: 100vh;
 }
 </style>
