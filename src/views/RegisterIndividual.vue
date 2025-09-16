@@ -274,7 +274,7 @@ const openPicker = (field: 'education' | 'political' | 'occupation') => {
 };
 
 // Picker 确认
-const onConfirm = ({ selectedValues, selectedOptions }) => {
+const onConfirm = ({ selectedValues, selectedOptions }: any) => {
   if (currentField === 'education') {
     education.value = selectedOptions[0]?.text;
   } else if (currentField === 'political') {
@@ -394,6 +394,10 @@ const fetchStatus = async () => {
 
   try {
     const res = await getIndividualStatus(store.individualId);
+    if (status.value !== res.data.status) {
+      hasRedirected.value = false;
+      store.clearCompletedAt();
+    }
     status.value = res.data.status;
     errorMessage.value = res.data.error_message || '';
     if (status.value !== 'first_signing' && status.value !== 'second_signing') {
@@ -480,13 +484,6 @@ onMounted(() => {
 }
 
 .submit-bar {
-  /* position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0; */
-  /* padding: 12px; */
-  /* background: #fff; */
-  /* box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06); */
   margin: 24px 12px 0;
 }
 
