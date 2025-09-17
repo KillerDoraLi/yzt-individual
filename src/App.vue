@@ -30,4 +30,9 @@
     url('@/styles/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular')
       format('svg');
 }
+input,
+textarea,
+.van-field__control {
+  font-size: 16px !important;
+}
 </style>
