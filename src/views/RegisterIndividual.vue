@@ -391,12 +391,13 @@ const fetchStatus = async () => {
   showToast({ type: 'loading', message: '加载中...', forbidClick: false });
   try {
     const res = await getIndividualStatus(store.individualId);
-    if (status.value !== res.data.status) {
+    status.value = res.data.status;
+    // status.value = 'first_signing';
+
+    if (status.value !== 'first_signing' && status.value !== 'second_signing') {
       hasRedirected.value = false;
       store.clearCompletedAt();
     }
-    // status.value = 'second_signing';
-    status.value = res.data.status;
     username.value = res.data.name;
     errorMessage.value = res.data.error_message || '';
     if (status.value !== 'first_signing' && status.value !== 'second_signing') {
@@ -464,9 +465,9 @@ const onSubmit = () => {
 /* -------------------- 生命周期 -------------------- */
 const route = useRoute();
 onMounted(() => {
-  const completedAt = route.query.completedAt;
-  if (completedAt) {
-    store.setCompletedAt(completedAt as string);
+  const completedAtQuery = route.query.completedAt;
+  if (completedAtQuery) {
+    store.setCompletedAt(completedAtQuery as string);
   } else {
     store.clearCompletedAt();
     hasRedirected.value = false;
