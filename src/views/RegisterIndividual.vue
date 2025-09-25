@@ -35,6 +35,38 @@
               { validator: validatePhone, message: '请输入正确的手机号' }
             ]"
           />
+          <van-field
+            v-model="card_number"
+            name="card_number"
+            label="银行卡号"
+            placeholder="请输入银行卡号"
+            :rules="[
+              { required: true, message: '银行卡号不能为空' },
+              { validator: validateCardNumber, message: '请输入正确的银行卡号' }
+            ]"
+          />
+          <van-field
+            v-model="dealer_name"
+            name="dealer_name"
+            label="车商名称"
+            placeholder="请输入车商名称"
+            :rules="[{ required: true, message: '车商名称不能为空' }]"
+          />
+          <van-field
+            name="car_identification"
+            label="业务类型"
+            :rules="[{ required: true, message: '业务类型不能为空' }]"
+          >
+            <template #input>
+              <van-radio-group
+                v-model="car_identification"
+                direction="horizontal"
+              >
+                <van-radio name="1">新车</van-radio>
+                <van-radio name="2">二手车</van-radio>
+              </van-radio-group>
+            </template>
+          </van-field>
         </van-cell-group>
 
         <van-divider>证件上传</van-divider>
@@ -142,6 +174,15 @@
               :source-string="`错误信息：${errorMessage}`"
             />
           </p>
+          <!-- <van-button
+            v-if="status === 'failed'"
+            type="primary"
+            plain
+            class="refresh-btn"
+            @click="clearData"
+          >
+            重新填写
+          </van-button> -->
           <p v-if="status === 'completed'" class="success-text">
             <van-highlight
               unhighlight-class="highlight-text-normal"
@@ -208,6 +249,7 @@ const completedAt = computed(() => store.completedAt);
 const name = ref('');
 const identification_number = ref('');
 const phone_number = ref('');
+const card_number = ref('');
 const education = ref('');
 const political = ref('');
 const occupation = ref('');
@@ -215,6 +257,8 @@ const id_face = ref<unknown[]>([]);
 const id_back = ref<unknown[]>([]);
 const faceUploadId = ref('');
 const backUploadId = ref('');
+const dealer_name = ref('');
+const car_identification = ref('');
 
 /* -------------------- Picker -------------------- */
 const showPicker = ref(false);
@@ -327,6 +371,8 @@ const validateIdCard = (val: string) =>
     val
   );
 
+const validateCardNumber = (val: string) => /^\d{16,19}$/.test(val);
+
 /* -------------------- 状态管理 -------------------- */
 // const status = ref<
 //   | 'submitted'
@@ -418,6 +464,7 @@ const fetchStatus = async () => {
     }
     if (
       (status.value === 'first_signing' || status.value === 'second_signing') &&
+      res.data.url_refreshing === false &&
       !hasRedirected.value &&
       res.data.signing_url &&
       !completedAt.value
@@ -425,13 +472,21 @@ const fetchStatus = async () => {
       hasRedirected.value = true;
       window.location.href = res.data.signing_url;
     }
+    if (res.data.url_refreshing === true) {
+      showToast({
+        type: 'loading',
+        message: '跳转地址刷新中，请10s后重试',
+        forbidClick: false,
+        duration: 3000
+      });
+    }
   } catch {
     showToast('查询失败，请稍后重试');
     store.clearIndividualId();
     store.clearCompletedAt();
     hasRedirected.value = false;
   } finally {
-    closeToast();
+    // closeToast();
   }
 };
 const throttledFetchStatus = throttle(fetchStatus, 3000, { trailing: false });
@@ -458,13 +513,17 @@ const onSubmit = () => {
     name: name.value,
     identification_number: identification_number.value,
     phone_number: phone_number.value,
+    card_number: card_number.value,
     id_card_front_id: faceUploadId.value,
     id_card_back_id: backUploadId.value,
     education: education.value,
     political: political.value,
     occupation: occupation.value,
-    corporation_id: 1
+    corporation_id: 1,
+    dealer_name: dealer_name.value,
+    car_identification: car_identification.value
   };
+  console.log(payload);
   showToast({ type: 'loading', message: '提交中...', forbidClick: false });
   registerIndividual(payload)
     .then((res) => {
@@ -474,7 +533,25 @@ const onSubmit = () => {
     })
     .finally(() => closeToast());
 };
-
+const clearData = () => {
+  name.value = '';
+  identification_number.value = '';
+  phone_number.value = '';
+  card_number.value = '';
+  faceUploadId.value = '';
+  backUploadId.value = '';
+  education.value = '';
+  political.value = '';
+  occupation.value = '';
+  id_back.value = [];
+  id_face.value = [];
+  faceUploadId.value = '';
+  backUploadId.value = '';
+  store.clearCompletedAt();
+  store.clearIndividualId();
+  store.clearStatus();
+  hasRedirected.value = false;
+};
 /* -------------------- 生命周期 -------------------- */
 const route = useRoute();
 onMounted(() => {
@@ -485,8 +562,7 @@ onMounted(() => {
     store.setIndividualId(individualIdQuery as string);
     store.clearCompletedAt();
     hasRedirected.value = false;
-  }
-  if (completedAtQuery) {
+  } else if (completedAtQuery) {
     store.setCompletedAt(completedAtQuery as string);
   } else {
     store.clearCompletedAt();
