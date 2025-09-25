@@ -265,6 +265,12 @@ const onConfirm = ({ selectedValues, selectedOptions }: any) => {
 /* -------------------- 上传逻辑 -------------------- */
 const afterReadFace = async (fileItem: { file: File }) => {
   if (!fileItem.file) return;
+  if (fileItem.file.size > 2 * 1024 * 1024) {
+    showToast({ type: 'fail', message: '文件大小不能超过2MB', duration: 5000 });
+    faceUploadId.value = '';
+    id_face.value = [];
+    return;
+  }
   try {
     showToast({ type: 'loading', message: '上传中...', forbidClick: true });
     const formData = new FormData();
@@ -282,11 +288,16 @@ const afterReadFace = async (fileItem: { file: File }) => {
     showToast({ type: 'fail', message: '上传失败', duration: 5000 });
     faceUploadId.value = '';
     id_face.value = [];
-    closeToast();
   }
 };
 const afterReadBack = async (fileItem: { file: File }) => {
   if (!fileItem.file) return;
+  if (fileItem.file.size > 2 * 1024 * 1024) {
+    showToast({ type: 'fail', message: '文件大小不能超过2MB', duration: 5000 });
+    backUploadId.value = '';
+    id_back.value = [];
+    return;
+  }
   try {
     showToast({ type: 'loading', message: '上传中...', forbidClick: true });
     const formData = new FormData();
@@ -317,23 +328,25 @@ const validateIdCard = (val: string) =>
   );
 
 /* -------------------- 状态管理 -------------------- */
-const status = ref<
-  | 'submitted'
-  | 'first_signing'
-  | 'business_registration'
-  | 'tax_registration'
-  | 'second_signing'
-  | 'completed'
-  | 'failed'
-  | 'cancelled'
-  | 'pending'
-  | ''
->('');
+// const status = ref<
+//   | 'submitted'
+//   | 'first_signing'
+//   | 'business_registration'
+//   | 'tax_registration'
+//   | 'second_signing'
+//   | 'completed'
+//   | 'failed'
+//   | 'cancelled'
+//   | 'pending'
+//   | ''
+// >('');
+
+const status = computed(() => store.status);
 const errorMessage = ref('');
 const username = ref('');
 const hasRedirected = ref(false);
 
-const statusMap: Record<typeof status.value, string> = {
+const statusMap: Record<string, string> = {
   submitted: '已提交',
   first_signing: '首次签约中',
   second_signing: '二次签约中',
@@ -345,7 +358,7 @@ const statusMap: Record<typeof status.value, string> = {
   pending: '处理中',
   '': ''
 };
-const statusText = computed(() => statusMap[status.value]);
+const statusText = computed(() => status.value && statusMap[status.value]);
 
 /* 定时刷新逻辑 */
 let intervalId: number | null = null;
@@ -391,17 +404,17 @@ const fetchStatus = async () => {
   showToast({ type: 'loading', message: '加载中...', forbidClick: false });
   try {
     const res = await getIndividualStatus(store.individualId);
-    status.value = res.data.status;
     // status.value = 'first_signing';
-
-    if (status.value !== 'first_signing' && status.value !== 'second_signing') {
-      hasRedirected.value = false;
+    if (status.value !== res.data.status) {
       store.clearCompletedAt();
+      hasRedirected.value = false;
     }
+    store.setStatus(res.data.status);
     username.value = res.data.name;
     errorMessage.value = res.data.error_message || '';
     if (status.value !== 'first_signing' && status.value !== 'second_signing') {
       store.clearCompletedAt();
+      hasRedirected.value = false;
     }
     if (
       (status.value === 'first_signing' || status.value === 'second_signing') &&
@@ -466,6 +479,13 @@ const onSubmit = () => {
 const route = useRoute();
 onMounted(() => {
   const completedAtQuery = route.query.completedAt;
+  const individualIdQuery = route.query.individualId;
+  console.log('onMounted', individualIdQuery);
+  if (individualIdQuery) {
+    store.setIndividualId(individualIdQuery as string);
+    store.clearCompletedAt();
+    hasRedirected.value = false;
+  }
   if (completedAtQuery) {
     store.setCompletedAt(completedAtQuery as string);
   } else {
@@ -476,7 +496,10 @@ onMounted(() => {
     fetchStatus();
   }
 });
-onUnmounted(() => clearAutoRefresh());
+onUnmounted(() => {
+  console.log('onUnmounted');
+  clearAutoRefresh();
+});
 </script>
 
 <style scoped>

@@ -9,7 +9,9 @@ export const useIndividualStore = defineStore('individual', () => {
   const completedAt = ref<string | null | ''>(
     localStorage.getItem('completedAt')
   );
-
+  const status = ref<string | null | ''>(
+    localStorage.getItem('individualStatus')
+  );
   // 设置 ID
   const setIndividualId = (id: string) => {
     individualId.value = id;
@@ -21,10 +23,20 @@ export const useIndividualStore = defineStore('individual', () => {
     localStorage.setItem('completedAt', time);
   };
 
+  const setStatus = (statusValue: string) => {
+    status.value = statusValue;
+    localStorage.setItem('individualStatus', statusValue);
+  };
+
   // 清空 ID
   const clearIndividualId = () => {
     individualId.value = null;
     localStorage.removeItem('individualId');
+  };
+
+  const clearStatus = () => {
+    status.value = null;
+    localStorage.removeItem('individualStatus');
   };
 
   const clearCompletedAt = () => {
@@ -38,6 +50,9 @@ export const useIndividualStore = defineStore('individual', () => {
     clearIndividualId,
     completedAt,
     setCompletedAt,
-    clearCompletedAt
+    clearCompletedAt,
+    status,
+    setStatus,
+    clearStatus
   };
 });
