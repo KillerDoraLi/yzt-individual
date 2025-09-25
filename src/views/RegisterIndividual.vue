@@ -22,7 +22,8 @@
             placeholder="请输入身份证号"
             :rules="[
               { required: true, message: '身份证号不能为空' },
-              { validator: validateIdCard, message: '请输入正确的身份证号' }
+              { validator: validateIdCard, message: '请输入正确的身份证号' },
+              { validator: validateIdCardAge, message: '仅限18-60岁用户注册' }
             ]"
           />
           <van-field
@@ -370,6 +371,45 @@ const validateIdCard = (val: string) =>
   /^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(
     val
   );
+// 身份证年龄校验（18~60岁）
+const validateIdCardAge = (idCard: string): boolean => {
+  let birthStr = '';
+
+  if (/^\d{15}$/.test(idCard)) {
+    // 15位，取7-12位，前加"19"
+    birthStr = '19' + idCard.slice(6, 12);
+  } else if (/^\d{17}[\dXx]$/.test(idCard)) {
+    // 18位，取7-14位
+    birthStr = idCard.slice(6, 14);
+  } else {
+    return false;
+  }
+
+  const year = parseInt(birthStr.slice(0, 4), 10);
+  const month = parseInt(birthStr.slice(4, 6), 10) - 1; // JS 月份从0开始
+  const day = parseInt(birthStr.slice(6, 8), 10);
+
+  const birthDate = new Date(year, month, day);
+  if (isNaN(birthDate.getTime())) {
+    return false;
+  }
+
+  // 计算年龄
+  const today = new Date();
+  let age = today.getFullYear() - year;
+  if (
+    today.getMonth() < month ||
+    (today.getMonth() === month && today.getDate() < day)
+  ) {
+    age--;
+  }
+
+  if (age < 18 || age > 60) {
+    return false;
+  }
+
+  return true;
+};
 
 const validateCardNumber = (val: string) => /^\d{16,19}$/.test(val);
 
@@ -464,7 +504,7 @@ const fetchStatus = async () => {
     }
     if (
       (status.value === 'first_signing' || status.value === 'second_signing') &&
-      res.data.url_refreshing === false &&
+      (!res.data.url_refreshing || res.data.url_refreshing === false) &&
       !hasRedirected.value &&
       res.data.signing_url &&
       !completedAt.value
