@@ -434,7 +434,7 @@ const hasRedirected = ref(false);
 
 const statusMap: Record<string, string> = {
   submitted: '已提交',
-  first_signing: '首次签约中',
+  first_signing: '信息登记中',
   second_signing: '二次签约中',
   business_registration: '工商登记中',
   tax_registration: '税务登记中',

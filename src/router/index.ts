@@ -31,6 +31,14 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '编辑'
         }
+      },
+      {
+        path: '/tax-calculator',
+        name: 'TaxCalculator',
+        component: () => import('@/views/CalculatorPage.vue'),
+        meta: {
+          title: '个税计算器'
+        }
       }
     ]
   }
