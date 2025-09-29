@@ -128,7 +128,7 @@ const reset = () => {
 
 <template>
   <div class="tax-calculator">
-    <a-card title="个税计算器" class="input-card" :bordered="false">
+    <a-card title="平台劳务个税计算器" class="input-card" :bordered="false">
       <a-row :gutter="[24, 24]">
         <!-- 输入区域 -->
         <a-col :xs="24" :lg="12">
@@ -141,7 +141,7 @@ const reset = () => {
                 size="small"
                 :tabBarStyle="{ borderBottom: 'none' }"
               >
-                <a-tab-pane key="uniform" tab="统一全额" />
+                <a-tab-pane key="uniform" tab="统一金额" />
                 <a-tab-pane key="custom" tab="自定义金额" />
               </a-tabs>
             </div>
