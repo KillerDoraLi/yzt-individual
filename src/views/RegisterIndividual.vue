@@ -567,6 +567,7 @@ const onSubmit = () => {
   showToast({ type: 'loading', message: '提交中...', forbidClick: false });
   registerIndividual(payload)
     .then((res) => {
+      console.log(res);
       store.setIndividualId(res.data.id);
       showToast('个体户信息提交成功');
       fetchStatus();
