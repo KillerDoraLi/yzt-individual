@@ -32,21 +32,21 @@ const monthOptions = [
 
 // 计算模式选项
 const modeOptions = [
-  { label: '统一全额', value: 'uniform' },
+  { label: '统一金额', value: 'uniform' },
   { label: '自定义金额', value: 'custom' }
 ];
 
 // 监听计算模式切换，清空数据
 watch(calculationMode, () => {
   selectedMonths.value = [];
-  // 清空工资数据
+  // 清空收入数据
   uniformSalary.value = 0;
   customSalaries.value = {};
   // 清空计算结果
   calculationResult.value = null;
 });
 
-// 监听选中月份变化，初始化自定义工资
+// 监听选中月份变化，初始化自定义收入
 watch(
   selectedMonths,
   (newMonths) => {
@@ -87,7 +87,7 @@ const calculate = () => {
     calculationMode.value === 'uniform' &&
     (!uniformSalary.value || uniformSalary.value <= 0)
   ) {
-    message.warning('请输入有效的税前工资');
+    message.warning('请输入有效的税前收入');
     return;
   }
 
@@ -97,7 +97,7 @@ const calculate = () => {
         !customSalaries.value[month] || customSalaries.value[month] <= 0
     );
     if (hasInvalidSalary) {
-      message.warning('请为所有选中月份输入有效的税前工资');
+      message.warning('请为所有选中月份输入有效的税前收入');
       return;
     }
   }
@@ -146,7 +146,7 @@ const reset = () => {
               </a-tabs>
             </div>
 
-            <!-- 工资输入 -->
+            <!-- 收入输入 -->
             <div class="form-item">
               <!-- 统一金额模式 -->
               <div v-if="calculationMode === 'uniform'" class="salary-input">
@@ -155,7 +155,7 @@ const reset = () => {
                   :min="0"
                   :max="10000000"
                   :precision="2"
-                  placeholder="请输入税前工资"
+                  placeholder="请输入税前收入"
                   style="width: 100%"
                   :formatter="
                     (value) =>
@@ -182,7 +182,7 @@ const reset = () => {
                         :min="0"
                         :max="10000000"
                         :precision="2"
-                        placeholder="税前工资"
+                        placeholder="税前收入"
                         style="width: 100%"
                         :formatter="
                           (value) =>
@@ -236,7 +236,7 @@ const reset = () => {
             <div class="summary-section">
               <a-typography-title :level="5">计算结果</a-typography-title>
               <div class="summary-row">
-                <div>税前总工资：</div>
+                <div>税前总收入：</div>
 
                 <div>{{ calculationResult.summary.totalPreTaxSalary }}</div>
               </div>
@@ -246,7 +246,7 @@ const reset = () => {
                 <div>{{ calculationResult.summary.totalTax }}</div>
               </div>
               <div class="summary-row">
-                <div>税后总工资：</div>
+                <div>税后总收入：</div>
 
                 <div>{{ calculationResult.summary.totalAfterTaxSalary }}</div>
               </div>
@@ -269,7 +269,7 @@ const reset = () => {
                     </div>
                     <div class="month-details">
                       <div class="detail-row">
-                        <span class="detail-label">税前工资</span>
+                        <span class="detail-label">税前收入</span>
                         <span class="detail-value">{{
                           monthData.preTaxSalary
                         }}</span>
@@ -281,7 +281,7 @@ const reset = () => {
                         }}</span>
                       </div>
                       <div class="detail-row">
-                        <span class="detail-label">税后工资</span>
+                        <span class="detail-label">税后收入</span>
                         <span class="detail-value after-tax-amount">{{
                           monthData.afterTaxSalary
                         }}</span>
@@ -300,7 +300,7 @@ const reset = () => {
                 >等待计算</a-typography-title
               >
               <a-typography-text type="secondary"
-                >请输入工资信息并点击"计算税后工资"按钮</a-typography-text
+                >请输入收入信息并点击"计算税后收入"按钮</a-typography-text
               >
             </div>
           </block>
@@ -316,7 +316,7 @@ const reset = () => {
         </a-col>
         <a-col :span="12">
           <a-button block type="primary" @click="calculate"
-            >计算税后工资</a-button
+            >计算税后收入</a-button
           >
         </a-col>
       </a-row>
