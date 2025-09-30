@@ -47,16 +47,41 @@
             ]"
           />
           <van-field
+            name="is_car"
+            label="是否为车商"
+            :rules="[{ required: true, message: '是否为车商不能为空' }]"
+          >
+            <template #input>
+              <van-radio-group v-model="is_car" direction="horizontal">
+                <van-radio name="1">是</van-radio>
+                <van-radio name="2">否</van-radio>
+              </van-radio-group>
+            </template>
+          </van-field>
+          <van-field
+            v-if="is_car === '1'"
             v-model="dealer_name"
             name="dealer_name"
             label="车商名称"
             placeholder="请输入车商名称"
-            :rules="[{ required: true, message: '车商名称不能为空' }]"
+            :rules="[
+              {
+                required: is_car === '1' ? true : false,
+                message: '车商名称不能为空'
+              }
+            ]"
           />
           <van-field
+            v-if="is_car === '1'"
+            v-model="car_identification"
             name="car_identification"
             label="业务类型"
-            :rules="[{ required: true, message: '业务类型不能为空' }]"
+            :rules="[
+              {
+                required: is_car === '1' ? true : false,
+                message: '业务类型不能为空'
+              }
+            ]"
           >
             <template #input>
               <van-radio-group
@@ -260,6 +285,7 @@ const faceUploadId = ref('');
 const backUploadId = ref('');
 const dealer_name = ref('');
 const car_identification = ref('');
+const is_car = ref('');
 
 /* -------------------- Picker -------------------- */
 const showPicker = ref(false);
