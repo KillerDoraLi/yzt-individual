@@ -193,13 +193,13 @@
               source-string="系统将在 30s 后跳转到签约页面，请您耐心等待～  若无法跳转请点击【刷新状态】按钮手动刷新或致电 19065163814 联系管理员。"
             />
           </p>
-          <p v-if="status === 'failed' && errorMessage" class="error-text">
+          <!-- <p v-if="status === 'failed' && errorMessage" class="error-text">
             <van-highlight
               unhighlight-class="highlight-text-normal"
               :keywords="[errorMessage]"
               :source-string="`错误信息：${errorMessage}`"
             />
-          </p>
+          </p> -->
           <!-- <van-button
             v-if="status === 'failed'"
             type="primary"
