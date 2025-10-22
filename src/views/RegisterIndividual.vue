@@ -265,6 +265,7 @@ import {
 } from '@/api';
 import { useIndividualStore } from '@/store/individual';
 import emptyImg from '@/assets/empty.png';
+import { decodeId } from '@/utils/encode';
 
 /* -------------------- Store -------------------- */
 const store = useIndividualStore();
@@ -457,6 +458,7 @@ const status = computed(() => store.status);
 const errorMessage = ref('');
 const username = ref('');
 const hasRedirected = ref(false);
+const corporationId = ref('');
 
 const statusMap: Record<string, string> = {
   submitted: '已提交',
@@ -585,7 +587,7 @@ const onSubmit = () => {
     education: education.value,
     political: political.value,
     occupation: occupation.value,
-    corporation_id: 1,
+    corporation_id: corporationId.value || 1,
     dealer_name: dealer_name.value,
     car_identification: car_identification.value
   };
@@ -600,31 +602,31 @@ const onSubmit = () => {
     })
     .finally(() => closeToast());
 };
-const clearData = () => {
-  name.value = '';
-  identification_number.value = '';
-  phone_number.value = '';
-  card_number.value = '';
-  faceUploadId.value = '';
-  backUploadId.value = '';
-  education.value = '';
-  political.value = '';
-  occupation.value = '';
-  id_back.value = [];
-  id_face.value = [];
-  faceUploadId.value = '';
-  backUploadId.value = '';
-  store.clearCompletedAt();
-  store.clearIndividualId();
-  store.clearStatus();
-  hasRedirected.value = false;
-};
+// const clearData = () => {
+//   name.value = '';
+//   identification_number.value = '';
+//   phone_number.value = '';
+//   card_number.value = '';
+//   faceUploadId.value = '';
+//   backUploadId.value = '';
+//   education.value = '';
+//   political.value = '';
+//   occupation.value = '';
+//   id_back.value = [];
+//   id_face.value = [];
+//   faceUploadId.value = '';
+//   backUploadId.value = '';
+//   store.clearCompletedAt();
+//   store.clearIndividualId();
+//   store.clearStatus();
+//   hasRedirected.value = false;
+// };
 /* -------------------- 生命周期 -------------------- */
 const route = useRoute();
 onMounted(() => {
   const completedAtQuery = route.query.completedAt;
   const individualIdQuery = route.query.individualId;
-  console.log('onMounted', individualIdQuery);
+  const corporationIdQuery = route.query.corporationId;
   if (individualIdQuery) {
     store.setIndividualId(individualIdQuery as string);
     store.clearCompletedAt();
@@ -638,9 +640,11 @@ onMounted(() => {
   if (store.individualId) {
     fetchStatus();
   }
+  if (corporationIdQuery) {
+    corporationId.value = decodeId(corporationIdQuery as string) || '1';
+  }
 });
 onUnmounted(() => {
-  console.log('onUnmounted');
   clearAutoRefresh();
 });
 </script>
