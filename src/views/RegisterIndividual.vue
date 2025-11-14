@@ -587,7 +587,7 @@ const onSubmit = () => {
     education: education.value,
     political: political.value,
     occupation: occupation.value,
-    corporation_id: corporationId.value || 1,
+    corporation_id: corporationId.value ? Number(corporationId.value) : 1,
     dealer_name: dealer_name.value,
     car_identification: car_identification.value
   };
