@@ -1,8 +1,12 @@
 <template>
   <div>
     <!-- 表单区域 -->
-    <div v-if="!individualId" class="layout">
-      <van-form @submit="onSubmit" class="form-wrapper">
+    <div v-if="!individualId || Number(corporationId) === 892" class="layout">
+      <van-form
+        v-if="Number(corporationId) === 892 && !status"
+        @submit="onSubmitPre"
+        class="form-wrapper"
+      >
         <van-divider>基本信息</van-divider>
         <van-cell-group inset>
           <van-field
@@ -10,6 +14,65 @@
             name="name"
             label="姓名"
             placeholder="请输入姓名"
+            :rules="[
+              { required: true, message: '姓名不能为空' },
+              { validator: validateName, message: '请输入至少2个字符的姓名' }
+            ]"
+          />
+          <van-field
+            v-model="identification_number"
+            name="identification_number"
+            label="身份证号"
+            placeholder="请输入身份证号"
+            :rules="[
+              { required: true, message: '身份证号不能为空' },
+              { validator: validateIdCard, message: '请输入正确的身份证号' },
+              { validator: validateIdCardAge, message: '仅限18-60岁用户注册' }
+            ]"
+          />
+          <van-field
+            v-model="phone_number"
+            name="phone_number"
+            label="手机号"
+            placeholder="请输入手机号"
+            :rules="[
+              { required: true, message: '手机号不能为空' },
+              { validator: validatePhone, message: '请输入正确的手机号' }
+            ]"
+          />
+          <van-field
+            v-model="dealer_name"
+            name="dealer_name"
+            label="车商名称"
+            placeholder="请输入车商名称"
+            :rules="[
+              {
+                required: is_car === '1' ? true : false,
+                message: '车商名称不能为空'
+              }
+            ]"
+          />
+        </van-cell-group>
+        <div class="submit-bar">
+          <van-button round block type="primary" native-type="submit">
+            提交
+          </van-button>
+        </div>
+      </van-form>
+      {{ Number(corporationId) !== 892 || status === 'approved' }}
+      <van-form
+        v-if="Number(corporationId) !== 892 || status === 'approved'"
+        @submit="onSubmit"
+        class="form-wrapper"
+      >
+        <van-divider>基本信息</van-divider>
+        <van-cell-group inset>
+          <van-field
+            v-model="name"
+            name="name"
+            label="姓名"
+            placeholder="请输入姓名"
+            :disabled="status === 'approved'"
             :rules="[
               { required: true, message: '姓名不能为空' },
               { validator: validateName, message: '请输入至少2个字符的姓名' }
@@ -181,7 +244,7 @@
     <!-- 状态页 -->
     <div v-else-if="individualId && status" class="status-page">
       <van-empty :image="emptyImg" :image-size="[140, 100]">
-        <div slot="description">
+        <template v-slot:description>
           <p v-if="status !== 'completed'" class="status-text">
             {{ `您的个体户签约状态为：${statusText}` }}
           </p>
@@ -216,7 +279,7 @@
               :source-string="`尊敬的${username}，您好！您提交的注册申请已完成，可前往个人实名登记的微信/支付宝查询“电子营业执照”小程序查看详细信息。如有需要可致电 19065163814，感谢您的支持！`"
             />
           </p>
-        </div>
+        </template>
 
         <div>
           <template v-if="status === 'failed'">
@@ -261,7 +324,8 @@ import {
   uploadFile,
   registerIndividual,
   getIndividualStatus,
-  retry
+  retry,
+  registerPre
 } from '@/api';
 import { useIndividualStore } from '@/store/individual';
 import emptyImg from '@/assets/empty.png';
@@ -470,6 +534,8 @@ const statusMap: Record<string, string> = {
   failed: '签约失败',
   cancelled: '已取消',
   pending: '处理中',
+  submit: '待审核',
+  approved: '已审核',
   '': ''
 };
 const statusText = computed(() => status.value && statusMap[status.value]);
@@ -525,6 +591,7 @@ const fetchStatus = async () => {
     }
     store.setStatus(res.data.status);
     username.value = res.data.name;
+    name.value = res.data.name;
     errorMessage.value = res.data.error_message || '';
     if (status.value !== 'first_signing' && status.value !== 'second_signing') {
       store.clearCompletedAt();
@@ -591,36 +658,35 @@ const onSubmit = () => {
     dealer_name: dealer_name.value,
     car_identification: car_identification.value
   };
-  console.log(payload);
   showToast({ type: 'loading', message: '提交中...', forbidClick: false });
   registerIndividual(payload)
     .then((res) => {
-      console.log(res);
       store.setIndividualId(res.data.id);
       showToast('个体户信息提交成功');
       fetchStatus();
     })
     .finally(() => closeToast());
 };
-// const clearData = () => {
-//   name.value = '';
-//   identification_number.value = '';
-//   phone_number.value = '';
-//   card_number.value = '';
-//   faceUploadId.value = '';
-//   backUploadId.value = '';
-//   education.value = '';
-//   political.value = '';
-//   occupation.value = '';
-//   id_back.value = [];
-//   id_face.value = [];
-//   faceUploadId.value = '';
-//   backUploadId.value = '';
-//   store.clearCompletedAt();
-//   store.clearIndividualId();
-//   store.clearStatus();
-//   hasRedirected.value = false;
-// };
+
+/* ---------------- 平安车管家预提交 ----------------- */
+const onSubmitPre = () => {
+  if (!corporationId.value) {
+    showToast('您的链接有误，请联系系统管理员');
+  }
+  registerPre({
+    name: name.value,
+    identification_number: identification_number.value,
+    phone_number: phone_number.value,
+    dealer_name: dealer_name.value,
+    corporation_id: Number(corporationId.value)
+  })
+    .then((res) => {
+      store.setIndividualId(res.data.id);
+      showToast('个体户信息提交成功');
+      fetchStatus();
+    })
+    .finally(() => closeToast());
+};
 /* -------------------- 生命周期 -------------------- */
 const route = useRoute();
 onMounted(() => {

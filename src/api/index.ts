@@ -25,3 +25,8 @@ export function getIndividualStatus(id: string) {
 export function retry(id: string | number) {
   return request.post(`/individual_contractor/${id}/retry`);
 }
+
+// 预登记接口（需要审核）
+export function registerPre(data:any) {
+  return request.post('/individual_contractor/pre_register', data)
+}

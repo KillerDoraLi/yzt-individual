@@ -111,8 +111,6 @@ const calculate = () => {
       calculationMode.value === 'custom' ? customSalaries.value : undefined
   };
 
-  console.error('CalculatorInput:', input); // 调试输出
-
   const result = calculateAfterTaxSalary(input);
   calculationResult.value = generateDisplayData(result);
 };
