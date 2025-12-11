@@ -59,7 +59,6 @@
           </van-button>
         </div>
       </van-form>
-      {{ Number(corporationId) !== 892 || status === 'approved' }}
       <van-form
         v-if="Number(corporationId) !== 892 || status === 'approved'"
         @submit="onSubmit"
