@@ -1,7 +1,13 @@
 <template>
   <div>
     <!-- 表单区域 -->
-    <div v-if="!individualId || Number(corporationId) === 892" class="layout">
+    <div
+      v-if="
+        (!individualId || Number(corporationId) === 892) &&
+        (!status || status === 'approved')
+      "
+      class="layout"
+    >
       <van-form
         v-if="Number(corporationId) === 892 && !status"
         @submit="onSubmitPre"
