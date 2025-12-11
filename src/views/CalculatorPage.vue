@@ -12,7 +12,7 @@ const calculationMode = ref<'uniform' | 'custom'>('uniform');
 const selectedMonths = ref<number[]>([]);
 const uniformSalary = ref<number>(0);
 const customSalaries = ref<Record<number, number>>({});
-const calculationResult = ref<any>(null);
+const calculationResult = ref(null);
 
 // 月份选项
 const monthOptions = [
@@ -28,12 +28,6 @@ const monthOptions = [
   { label: '10月', value: 10 },
   { label: '11月', value: 11 },
   { label: '12月', value: 12 }
-];
-
-// 计算模式选项
-const modeOptions = [
-  { label: '统一金额', value: 'uniform' },
-  { label: '自定义金额', value: 'custom' }
 ];
 
 // 监听计算模式切换，清空数据
