@@ -1,274 +1,281 @@
 <template>
   <div>
-    <!-- 表单区域 -->
-    <div
-      v-if="
-        (!individualId || Number(corporationId) === 892) &&
-        (!status || status === 'approved')
-      "
-      class="layout"
-    >
-      <van-form
-        v-if="Number(corporationId) === 892 && !status"
-        @submit="onSubmitPre"
-        class="form-wrapper"
+    <div v-if="corporationId">
+      <!-- 表单区域 -->
+      <div
+        v-if="
+          (!individualId || Number(corporationId) === 892) &&
+          (!status || status === 'approved')
+        "
+        class="layout"
       >
-        <van-divider>基本信息</van-divider>
-        <van-cell-group inset>
-          <van-field
-            v-model="name"
-            name="name"
-            label="姓名"
-            placeholder="请输入姓名"
-            :rules="[
-              { required: true, message: '姓名不能为空' },
-              { validator: validateName, message: '请输入至少2个字符的姓名' }
-            ]"
-          />
-          <van-field
-            v-model="identification_number"
-            name="identification_number"
-            label="身份证号"
-            placeholder="请输入身份证号"
-            :rules="[
-              { required: true, message: '身份证号不能为空' },
-              { validator: validateIdCard, message: '请输入正确的身份证号' },
-              { validator: validateIdCardAge, message: '仅限18-60岁用户注册' }
-            ]"
-          />
-          <van-field
-            v-model="phone_number"
-            name="phone_number"
-            label="手机号"
-            placeholder="请输入手机号"
-            :rules="[
-              { required: true, message: '手机号不能为空' },
-              { validator: validatePhone, message: '请输入正确的手机号' }
-            ]"
-          />
-          <van-field
-            v-model="dealer_name"
-            name="dealer_name"
-            label="车商名称"
-            placeholder="请输入车商名称"
-            :rules="[
-              {
-                required: is_car === '1' ? true : false,
-                message: '车商名称不能为空'
-              }
-            ]"
-          />
-        </van-cell-group>
-        <div class="submit-bar">
-          <van-button round block type="primary" native-type="submit">
-            提交
-          </van-button>
-        </div>
-      </van-form>
-      <van-form
-        v-if="Number(corporationId) !== 892 || status === 'approved'"
-        @submit="onSubmit"
-        class="form-wrapper"
-      >
-        <van-divider>基本信息</van-divider>
-        <van-cell-group inset>
-          <van-field
-            v-model="name"
-            name="name"
-            label="姓名"
-            placeholder="请输入姓名"
-            :disabled="status === 'approved'"
-            :rules="[
-              { required: true, message: '姓名不能为空' },
-              { validator: validateName, message: '请输入至少2个字符的姓名' }
-            ]"
-          />
-          <van-field
-            v-model="identification_number"
-            name="identification_number"
-            label="身份证号"
-            placeholder="请输入身份证号"
-            :rules="[
-              { required: true, message: '身份证号不能为空' },
-              { validator: validateIdCard, message: '请输入正确的身份证号' },
-              { validator: validateIdCardAge, message: '仅限18-60岁用户注册' }
-            ]"
-          />
-          <van-field
-            v-model="phone_number"
-            name="phone_number"
-            label="手机号"
-            placeholder="请输入手机号"
-            :rules="[
-              { required: true, message: '手机号不能为空' },
-              { validator: validatePhone, message: '请输入正确的手机号' }
-            ]"
-          />
-          <van-field
-            v-model="card_number"
-            name="card_number"
-            label="银行卡号"
-            placeholder="请输入银行卡号"
-            :rules="[
-              { required: true, message: '银行卡号不能为空' },
-              { validator: validateCardNumber, message: '请输入正确的银行卡号' }
-            ]"
-          />
-          <van-field
-            name="is_car"
-            label="是否为车商"
-            :rules="[{ required: true, message: '是否为车商不能为空' }]"
-          >
-            <template #input>
-              <van-radio-group v-model="is_car" direction="horizontal">
-                <van-radio name="1">是</van-radio>
-                <van-radio name="2">否</van-radio>
-              </van-radio-group>
-            </template>
-          </van-field>
-          <van-field
-            v-if="is_car === '1'"
-            v-model="dealer_name"
-            name="dealer_name"
-            label="车商名称"
-            placeholder="请输入车商名称"
-            :rules="[
-              {
-                required: is_car === '1' ? true : false,
-                message: '车商名称不能为空'
-              }
-            ]"
-          />
-          <van-field
-            v-if="is_car === '1'"
-            v-model="car_identification"
-            name="car_identification"
-            label="业务类型"
-            :rules="[
-              {
-                required: is_car === '1' ? true : false,
-                message: '业务类型不能为空'
-              }
-            ]"
-          >
-            <template #input>
-              <van-radio-group
-                v-model="car_identification"
-                direction="horizontal"
-              >
-                <van-radio name="1">新车</van-radio>
-                <van-radio name="2">二手车</van-radio>
-              </van-radio-group>
-            </template>
-          </van-field>
-        </van-cell-group>
-
-        <van-divider>证件上传</van-divider>
-        <van-cell-group inset>
-          <van-field
-            name="faceUploadId"
-            label="身份证人像面"
-            :rules="[{ required: true, message: '请上传身份证人像面' }]"
-          >
-            <template #input>
-              <van-uploader
-                v-model="id_face"
-                :after-read="afterReadFace"
-                :max-count="1"
-                reupload
-                :preview-size="80"
-              />
-            </template>
-          </van-field>
-          <van-field
-            name="backUploadId"
-            label="身份证国徽面"
-            :rules="[{ required: true, message: '请上传身份证国徽面' }]"
-          >
-            <template #input>
-              <van-uploader
-                v-model="id_back"
-                :after-read="afterReadBack"
-                :max-count="1"
-                reupload
-                :preview-size="80"
-              />
-            </template>
-          </van-field>
-        </van-cell-group>
-
-        <van-divider>其他信息</van-divider>
-        <van-cell-group inset>
-          <van-field
-            v-model="education"
-            is-link
-            readonly
-            label="学历"
-            placeholder="点击选择学历"
-            @click="openPicker('education')"
-          />
-          <van-field
-            v-model="political"
-            is-link
-            readonly
-            label="政治面貌"
-            placeholder="点击选择政治面貌"
-            @click="openPicker('political')"
-          />
-          <van-field
-            v-model="occupation"
-            is-link
-            readonly
-            label="职业"
-            placeholder="点击选择职业"
-            @click="openPicker('occupation')"
-          />
-        </van-cell-group>
-
-        <div class="submit-bar">
-          <van-button round block type="primary" native-type="submit">
-            提交个体户签约
-          </van-button>
-        </div>
-      </van-form>
-
-      <!-- Picker -->
-      <van-popup v-model:show="showPicker" position="bottom" round>
-        <van-picker
-          :columns="currentColumns"
-          :model-value="pickerValue"
-          title="请选择"
-          confirm-button-text="确定"
-          cancel-button-text="取消"
-          @confirm="onConfirm"
-          @cancel="showPicker = false"
-        />
-      </van-popup>
-    </div>
-
-    <!-- 状态页 -->
-    <div v-else-if="individualId && status" class="status-page">
-      <van-empty :image="emptyImg" :image-size="[140, 100]">
-        <template v-slot:description>
-          <p v-if="status !== 'completed'" class="status-text">
-            {{ `您的个体户签约状态为：${statusText}` }}
-          </p>
-          <p class="hint-text">
-            <van-highlight
-              v-if="status === 'first_signing' || status === 'second_signing'"
-              unhighlight-class="highlight-text-normal"
-              :keywords="['', '19065163814']"
-              source-string="系统将在 30s 后跳转到签约页面，请您耐心等待～  若无法跳转请点击【刷新状态】按钮手动刷新或致电 19065163814 联系管理员。"
+        <van-form
+          v-if="Number(corporationId) === 892 && !status"
+          @submit="onSubmitPre"
+          class="form-wrapper"
+        >
+          <van-divider>基本信息</van-divider>
+          <van-cell-group inset>
+            <van-field
+              v-model="name"
+              name="name"
+              label="姓名"
+              placeholder="请输入姓名"
+              :rules="[
+                { required: true, message: '姓名不能为空' },
+                { validator: validateName, message: '请输入至少2个字符的姓名' }
+              ]"
             />
-          </p>
-          <!-- <p v-if="status === 'failed' && errorMessage" class="error-text">
+            <van-field
+              v-model="identification_number"
+              name="identification_number"
+              label="身份证号"
+              placeholder="请输入身份证号"
+              :rules="[
+                { required: true, message: '身份证号不能为空' },
+                { validator: validateIdCard, message: '请输入正确的身份证号' },
+                { validator: validateIdCardAge, message: '仅限18-60岁用户注册' }
+              ]"
+            />
+            <van-field
+              v-model="phone_number"
+              name="phone_number"
+              label="手机号"
+              placeholder="请输入手机号"
+              :rules="[
+                { required: true, message: '手机号不能为空' },
+                { validator: validatePhone, message: '请输入正确的手机号' }
+              ]"
+            />
+            <van-field
+              v-model="dealer_name"
+              name="dealer_name"
+              label="车商名称"
+              placeholder="请输入车商名称"
+              :rules="[
+                {
+                  required: is_car === '1' ? true : false,
+                  message: '车商名称不能为空'
+                }
+              ]"
+            />
+          </van-cell-group>
+          <div class="submit-bar">
+            <van-button round block type="primary" native-type="submit">
+              提交
+            </van-button>
+          </div>
+        </van-form>
+        <van-form
+          v-if="Number(corporationId) !== 892 || status === 'approved'"
+          @submit="onSubmit"
+          class="form-wrapper"
+        >
+          <van-divider>基本信息</van-divider>
+          <van-cell-group inset>
+            <van-field
+              v-model="name"
+              name="name"
+              label="姓名"
+              placeholder="请输入姓名"
+              :disabled="status === 'approved'"
+              :rules="[
+                { required: true, message: '姓名不能为空' },
+                { validator: validateName, message: '请输入至少2个字符的姓名' }
+              ]"
+            />
+            <van-field
+              v-model="identification_number"
+              name="identification_number"
+              label="身份证号"
+              placeholder="请输入身份证号"
+              :rules="[
+                { required: true, message: '身份证号不能为空' },
+                { validator: validateIdCard, message: '请输入正确的身份证号' },
+                { validator: validateIdCardAge, message: '仅限18-60岁用户注册' }
+              ]"
+            />
+            <van-field
+              v-model="phone_number"
+              name="phone_number"
+              label="手机号"
+              placeholder="请输入手机号"
+              :rules="[
+                { required: true, message: '手机号不能为空' },
+                { validator: validatePhone, message: '请输入正确的手机号' }
+              ]"
+            />
+            <van-field
+              v-model="card_number"
+              name="card_number"
+              label="银行卡号"
+              placeholder="请输入银行卡号"
+              :rules="[
+                { required: true, message: '银行卡号不能为空' },
+                {
+                  validator: validateCardNumber,
+                  message: '请输入正确的银行卡号'
+                }
+              ]"
+            />
+            <van-field
+              name="is_car"
+              label="是否为车商"
+              :rules="[{ required: true, message: '是否为车商不能为空' }]"
+            >
+              <template #input>
+                <van-radio-group v-model="is_car" direction="horizontal">
+                  <van-radio name="1">是</van-radio>
+                  <van-radio name="2">否</van-radio>
+                </van-radio-group>
+              </template>
+            </van-field>
+            <van-field
+              v-if="is_car === '1'"
+              v-model="dealer_name"
+              name="dealer_name"
+              label="车商名称"
+              placeholder="请输入车商名称"
+              :rules="[
+                {
+                  required: is_car === '1' ? true : false,
+                  message: '车商名称不能为空'
+                }
+              ]"
+            />
+            <van-field
+              v-if="is_car === '1'"
+              v-model="car_identification"
+              name="car_identification"
+              label="业务类型"
+              :rules="[
+                {
+                  required: is_car === '1' ? true : false,
+                  message: '业务类型不能为空'
+                }
+              ]"
+            >
+              <template #input>
+                <van-radio-group
+                  v-model="car_identification"
+                  direction="horizontal"
+                >
+                  <van-radio name="1">新车</van-radio>
+                  <van-radio name="2">二手车</van-radio>
+                </van-radio-group>
+              </template>
+            </van-field>
+          </van-cell-group>
+
+          <van-divider>证件上传</van-divider>
+          <van-cell-group inset>
+            <van-field
+              name="faceUploadId"
+              label="身份证人像面"
+              :rules="[{ required: true, message: '请上传身份证人像面' }]"
+            >
+              <template #input>
+                <van-uploader
+                  v-model="id_face"
+                  :after-read="afterReadFace"
+                  :max-count="1"
+                  reupload
+                  :preview-size="80"
+                />
+              </template>
+            </van-field>
+            <van-field
+              name="backUploadId"
+              label="身份证国徽面"
+              :rules="[{ required: true, message: '请上传身份证国徽面' }]"
+            >
+              <template #input>
+                <van-uploader
+                  v-model="id_back"
+                  :after-read="afterReadBack"
+                  :max-count="1"
+                  reupload
+                  :preview-size="80"
+                />
+              </template>
+            </van-field>
+          </van-cell-group>
+
+          <van-divider>其他信息</van-divider>
+          <van-cell-group inset>
+            <van-field
+              v-model="education"
+              is-link
+              readonly
+              label="学历"
+              placeholder="点击选择学历"
+              @click="openPicker('education')"
+            />
+            <van-field
+              v-model="political"
+              is-link
+              readonly
+              label="政治面貌"
+              placeholder="点击选择政治面貌"
+              @click="openPicker('political')"
+            />
+            <van-field
+              v-model="occupation"
+              is-link
+              readonly
+              label="职业"
+              placeholder="点击选择职业"
+              @click="openPicker('occupation')"
+            />
+          </van-cell-group>
+
+          <div class="submit-bar">
+            <van-button round block type="primary" native-type="submit">
+              提交个体户签约
+            </van-button>
+          </div>
+        </van-form>
+
+        <!-- Picker -->
+        <van-popup v-model:show="showPicker" position="bottom" round>
+          <van-picker
+            :columns="currentColumns"
+            :model-value="pickerValue"
+            title="请选择"
+            confirm-button-text="确定"
+            cancel-button-text="取消"
+            @confirm="onConfirm"
+            @cancel="showPicker = false"
+          />
+        </van-popup>
+      </div>
+
+      <!-- 状态页 -->
+      <div v-else-if="individualId && status" class="status-page">
+        <van-empty :image="emptyImg" :image-size="[140, 100]">
+          <template v-slot:description>
+            <p v-if="status !== 'completed'" class="status-text">
+              {{ `您的个体户签约状态为：${statusText}` }}
+            </p>
+            <p v-if="status === 'approved'" class="status-text">
+              您的信息已提交审核，审核结果于24小时后更新，届时请刷新该界面或再次扫码进入该界面进行后续操作。
+            </p>
+            <p class="hint-text">
+              <van-highlight
+                v-if="status === 'first_signing' || status === 'second_signing'"
+                unhighlight-class="highlight-text-normal"
+                :keywords="['', '19065163814']"
+                source-string="系统将在 30s 后跳转到签约页面，请您耐心等待～  若无法跳转请点击【刷新状态】按钮手动刷新或致电 19065163814 联系管理员。"
+              />
+            </p>
+            <!-- <p v-if="status === 'failed' && errorMessage" class="error-text">
             <van-highlight
               unhighlight-class="highlight-text-normal"
               :keywords="[errorMessage]"
               :source-string="`错误信息：${errorMessage}`"
             />
           </p> -->
-          <!-- <van-button
+            <!-- <van-button
             v-if="status === 'failed'"
             type="primary"
             plain
@@ -277,46 +284,48 @@
           >
             重新填写
           </van-button> -->
-          <p v-if="status === 'completed'" class="success-text">
-            <van-highlight
-              unhighlight-class="highlight-text-normal"
-              :keywords="['电子营业执照', '19065163814']"
-              :source-string="`尊敬的${username}，您好！您提交的注册申请已完成，可前往个人实名登记的微信/支付宝查询“电子营业执照”小程序查看详细信息。如有需要可致电 19065163814，感谢您的支持！`"
-            />
-          </p>
-        </template>
-
-        <div>
-          <template v-if="status === 'failed'">
-            <p class="tip-text">
-              若信息无误，请重新提交；若信息有误，请致电 19065163814 咨询。
+            <p v-if="status === 'completed'" class="success-text">
+              <van-highlight
+                unhighlight-class="highlight-text-normal"
+                :keywords="['电子营业执照', '19065163814']"
+                :source-string="`尊敬的${username}，您好！您提交的注册申请已完成，可前往个人实名登记的微信/支付宝查询“电子营业执照”小程序查看详细信息。如有需要可致电 19065163814，感谢您的支持！`"
+              />
             </p>
-            <div class="btn-group">
-              <van-button
-                type="primary"
-                style="margin-right: 12px"
-                size="small"
-                @click="resubmit"
-              >
-                重新提交
-              </van-button>
-            </div>
           </template>
-          <van-button
-            v-if="status !== 'completed'"
-            type="primary"
-            plain
-            class="refresh-btn"
-            @click="throttledFetchStatus"
-          >
-            刷新状态
-          </van-button>
-        </div>
-      </van-empty>
-    </div>
 
-    <!-- 空状态 -->
-    <van-empty v-else description="您的注册状态为空，请联系管理员" />
+          <div>
+            <template v-if="status === 'failed'">
+              <p class="tip-text">
+                若信息无误，请重新提交；若信息有误，请致电 19065163814 咨询。
+              </p>
+              <div class="btn-group">
+                <van-button
+                  type="primary"
+                  style="margin-right: 12px"
+                  size="small"
+                  @click="resubmit"
+                >
+                  重新提交
+                </van-button>
+              </div>
+            </template>
+            <van-button
+              v-if="status !== 'completed'"
+              type="primary"
+              plain
+              class="refresh-btn"
+              @click="throttledFetchStatus"
+            >
+              刷新状态
+            </van-button>
+          </div>
+        </van-empty>
+      </div>
+
+      <!-- 空状态 -->
+      <van-empty v-else description="您的注册状态为空，请联系管理员" />
+    </div>
+    <van-empty v-else description="此链接已停止使用，如有需要请联系管理员" />
   </div>
 </template>
 
