@@ -591,6 +591,7 @@ watch(status, (newStatus) => {
 const fetchStatus = async () => {
   if (!store.individualId) {
     store.clearCompletedAt();
+    store.clearStatus();
     hasRedirected.value = false;
     showToast({ type: 'fail', message: '请提交个体户信息', duration: 2000 });
     return;
@@ -633,6 +634,7 @@ const fetchStatus = async () => {
     showToast('查询失败，请稍后重试');
     store.clearIndividualId();
     store.clearCompletedAt();
+    store.clearStatus();
     hasRedirected.value = false;
   } finally {
     // closeToast();
@@ -644,6 +646,7 @@ const throttledFetchStatus = throttle(fetchStatus, 3000, { trailing: false });
 const resubmit = () => {
   if (!store.individualId) {
     store.clearCompletedAt();
+    store.clearStatus();
     hasRedirected.value = false;
     return;
   }
@@ -714,6 +717,7 @@ onMounted(() => {
   } else if (completedAtQuery) {
     store.setCompletedAt(completedAtQuery as string);
   } else {
+    store.clearStatus();
     store.clearCompletedAt();
     hasRedirected.value = false;
   }
