@@ -200,6 +200,23 @@
               </template>
             </van-field>
           </van-cell-group>
+          <div class="id-tips-text">
+            拍摄时确保身份证 边框完整，照片清晰，亮度均匀
+          </div>
+          <div class="id-tips">
+            <van-image height="60" :src="idTip1">
+              <van-icon name="success" color="green" />标准拍摄
+            </van-image>
+            <van-image height="60" :src="idTip2">
+              <van-icon name="cross" color="red" />照片缺失
+            </van-image>
+            <van-image height="60" :src="idTip3">
+              <van-icon name="cross" color="red" />照片模糊
+            </van-image>
+            <van-image height="60" :src="idTip4">
+              <van-icon name="cross" color="red" />照片反光
+            </van-image>
+          </div>
 
           <van-divider>其他信息</van-divider>
           <van-cell-group inset>
@@ -344,6 +361,10 @@ import {
 import { useIndividualStore } from '@/store/individual';
 import emptyImg from '@/assets/empty.png';
 import { decodeId } from '@/utils/encode';
+import idTip1 from '@/assets/id-tip-1.png';
+import idTip2 from '@/assets/id-tip-2.png';
+import idTip3 from '@/assets/id-tip-3.png';
+import idTip4 from '@/assets/id-tip-4.png';
 
 /* -------------------- Store -------------------- */
 const store = useIndividualStore();
@@ -783,5 +804,17 @@ onUnmounted(() => {
 .highlight-text-normal {
   color: #666;
   line-height: 1.6;
+}
+.id-tips {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 12px 24px;
+  font-size: 12px;
+  text-align: center;
+}
+.id-tips-text {
+  margin: 12px 12px 6px;
+  font-size: 14px;
+  color: #444;
 }
 </style>
