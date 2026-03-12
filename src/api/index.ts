@@ -27,6 +27,11 @@ export function retry(id: string | number) {
 }
 
 // 预登记接口（需要审核）
-export function registerPre(data:any) {
-  return request.post('/individual_contractor/pre_register', data)
+export function registerPre(data: any) {
+  return request.post('/individual_contractor/pre_register', data);
+}
+
+// 根据身份证号查询个体户信息（无商户参数时使用）
+export function getIndividualByIDCard(idCard: string) {
+  return request.get(`/individual_contractor/id_card/${encodeURIComponent(idCard)}`);
 }

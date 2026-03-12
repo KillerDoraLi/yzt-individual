@@ -66,6 +66,7 @@
             </van-button>
           </div>
         </van-form>
+
         <van-form
           v-if="Number(corporationId) !== 892 || status === 'approved'"
           @submit="onSubmit"
@@ -168,38 +169,12 @@
           </van-cell-group>
 
           <van-divider>证件上传</van-divider>
-          <van-cell-group inset>
-            <van-field
-              name="faceUploadId"
-              label="身份证人像面"
-              :rules="[{ required: true, message: '请上传身份证人像面' }]"
-            >
-              <template #input>
-                <van-uploader
-                  v-model="id_face"
-                  :after-read="afterReadFace"
-                  :max-count="1"
-                  reupload
-                  :preview-size="80"
-                />
-              </template>
-            </van-field>
-            <van-field
-              name="backUploadId"
-              label="身份证国徽面"
-              :rules="[{ required: true, message: '请上传身份证国徽面' }]"
-            >
-              <template #input>
-                <van-uploader
-                  v-model="id_back"
-                  :after-read="afterReadBack"
-                  :max-count="1"
-                  reupload
-                  :preview-size="80"
-                />
-              </template>
-            </van-field>
-          </van-cell-group>
+          <IdCardUploadSection
+            v-model:face-upload-id="faceUploadId"
+            v-model:back-upload-id="backUploadId"
+            v-model:id-face-list="id_face"
+            v-model:id-back-list="id_back"
+          />
           <div class="id-tips-text">
             拍摄时确保身份证 边框完整，照片清晰，亮度均匀
           </div>
@@ -219,32 +194,11 @@
           </div>
 
           <van-divider>其他信息</van-divider>
-          <van-cell-group inset>
-            <van-field
-              v-model="education"
-              is-link
-              readonly
-              label="学历"
-              placeholder="点击选择学历"
-              @click="openPicker('education')"
-            />
-            <van-field
-              v-model="political"
-              is-link
-              readonly
-              label="政治面貌"
-              placeholder="点击选择政治面貌"
-              @click="openPicker('political')"
-            />
-            <van-field
-              v-model="occupation"
-              is-link
-              readonly
-              label="职业"
-              placeholder="点击选择职业"
-              @click="openPicker('occupation')"
-            />
-          </van-cell-group>
+          <OtherInfoPicker
+            v-model:education="education"
+            v-model:political="political"
+            v-model:occupation="occupation"
+          />
 
           <div class="submit-bar">
             <van-button round block type="primary" native-type="submit">
@@ -252,124 +206,84 @@
             </van-button>
           </div>
         </van-form>
-
-        <!-- Picker -->
-        <van-popup v-model:show="showPicker" position="bottom" round>
-          <van-picker
-            :columns="currentColumns"
-            :model-value="pickerValue"
-            title="请选择"
-            confirm-button-text="确定"
-            cancel-button-text="取消"
-            @confirm="onConfirm"
-            @cancel="showPicker = false"
-          />
-        </van-popup>
       </div>
 
       <!-- 状态页 -->
-      <div v-else-if="individualId && status" class="status-page">
-        <van-empty :image="emptyImg" :image-size="[140, 100]">
-          <template v-slot:description>
-            <p v-if="status !== 'completed'" class="status-text">
-              {{ `您的个体户签约状态为：${statusText}` }}
-            </p>
-            <p v-if="status === 'approved'" class="status-text">
-              您的信息已提交审核，审核结果于24小时后更新，届时请刷新该界面或再次扫码进入该界面进行后续操作。
-            </p>
-            <p class="hint-text">
-              <van-highlight
-                v-if="status === 'first_signing' || status === 'second_signing'"
-                unhighlight-class="highlight-text-normal"
-                :keywords="['', '19065163814']"
-                source-string="系统将在 30s 后跳转到签约页面，请您耐心等待～  若无法跳转请点击【刷新状态】按钮手动刷新或致电 19065163814 联系管理员。"
-              />
-            </p>
-            <!-- <p v-if="status === 'failed' && errorMessage" class="error-text">
-            <van-highlight
-              unhighlight-class="highlight-text-normal"
-              :keywords="[errorMessage]"
-              :source-string="`错误信息：${errorMessage}`"
-            />
-          </p> -->
-            <!-- <van-button
-            v-if="status === 'failed'"
-            type="primary"
-            plain
-            class="refresh-btn"
-            @click="clearData"
-          >
-            重新填写
-          </van-button> -->
-            <p v-if="status === 'completed'" class="success-text">
-              <van-highlight
-                unhighlight-class="highlight-text-normal"
-                :keywords="['电子营业执照', '19065163814']"
-                :source-string="`尊敬的${username}，您好！您提交的注册申请已完成，可前往个人实名登记的微信/支付宝查询“电子营业执照”小程序查看详细信息。如有需要可致电 19065163814，感谢您的支持！`"
-              />
-            </p>
-          </template>
-
-          <div>
-            <template v-if="status === 'failed'">
-              <p class="tip-text">
-                若信息无误，请重新提交；若信息有误，请致电 19065163814 咨询。
-              </p>
-              <div class="btn-group">
-                <van-button
-                  type="primary"
-                  style="margin-right: 12px"
-                  size="small"
-                  @click="resubmit"
-                >
-                  重新提交
-                </van-button>
-              </div>
-            </template>
-            <van-button
-              v-if="status !== 'completed'"
-              type="primary"
-              plain
-              class="refresh-btn"
-              @click="throttledFetchStatus"
-            >
-              刷新状态
-            </van-button>
-          </div>
-        </van-empty>
-      </div>
+      <StatusDisplay
+        v-else-if="individualId && status"
+        :status="status ?? ''"
+        :status-text="statusText ?? ''"
+        :username="username ?? ''"
+        @resubmit="resubmit"
+        @refresh="throttledFetchStatus"
+      />
 
       <!-- 空状态 -->
       <van-empty v-else description="您的注册状态为空，请联系管理员" />
     </div>
-    <van-empty v-else description="此链接已停止使用，如有需要请联系管理员" />
+
+    <!-- 无商户参数：身份证号查询个体户信息 -->
+    <div v-else class="layout id-card-query-wrap">
+      <van-cell-group inset>
+        <van-field
+          v-model="idCardQuery"
+          name="id_card"
+          label="身份证号"
+          placeholder="请输入身份证号查询个体户信息"
+          clearable
+          :rules="[
+            { required: true, message: '请输入身份证号' },
+            { validator: validateIdCard, message: '请输入正确的身份证号' }
+          ]"
+        />
+      </van-cell-group>
+      <div class="submit-bar">
+        <van-button
+          round
+          block
+          type="primary"
+          :loading="queryByIdCardLoading"
+          :disabled="!idCardQuery.trim()"
+          @click="onQueryByIdCard"
+        >
+          查询
+        </van-button>
+      </div>
+      <p class="query-tip">未携带商户链接时，可通过身份证号查询您的个体户签约信息。</p>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch, onUnmounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { showToast, closeToast } from 'vant';
-import { throttle } from 'lodash-es';
 import {
-  uploadFile,
   registerIndividual,
-  getIndividualStatus,
-  retry,
-  registerPre
+  registerPre,
+  getIndividualByIDCard
 } from '@/api';
 import { useIndividualStore } from '@/store/individual';
-import emptyImg from '@/assets/empty.png';
-import { decodeId } from '@/utils/encode';
+import { decodeId, encodeId } from '@/utils/encode';
 import idTip1 from '@/assets/id-tip-1.png';
 import idTip2 from '@/assets/id-tip-2.png';
 import idTip3 from '@/assets/id-tip-3.png';
 import idTip4 from '@/assets/id-tip-4.png';
+import {
+  validateName,
+  validatePhone,
+  validateIdCard,
+  validateIdCardAge,
+  validateCardNumber
+} from '@/utils/registerValidators';
+import { useIndividualStatus } from '@/composables/useIndividualStatus';
+import IdCardUploadSection from '@/components/RegisterIndividual/IdCardUploadSection.vue';
+import OtherInfoPicker from '@/components/RegisterIndividual/OtherInfoPicker.vue';
+import StatusDisplay from '@/components/RegisterIndividual/StatusDisplay.vue';
 
-/* -------------------- Store -------------------- */
 const store = useIndividualStore();
-const individualId = computed(() => store.individualId);
-const completedAt = computed(() => store.completedAt);
+const route = useRoute();
+const router = useRouter();
 
 /* -------------------- 表单字段 -------------------- */
 const name = ref('');
@@ -386,301 +300,61 @@ const backUploadId = ref('');
 const dealer_name = ref('');
 const car_identification = ref('');
 const is_car = ref('');
-
-/* -------------------- Picker -------------------- */
-const showPicker = ref(false);
-const pickerValue = ref([]);
-const currentColumns = ref<unknown[]>([]);
-let currentField: 'education' | 'political' | 'occupation' | null = null;
-
-const edu_columns = [
-  { text: '小学', value: 'PRIMARY_SCHOOL' },
-  { text: '初中', value: 'MIDDLE_SCHOOL' },
-  { text: '高中', value: 'HIGH_SCHOOL' },
-  { text: '大专', value: 'COLLEGE' },
-  { text: '本科', value: 'BACHELOR' },
-  { text: '硕士', value: 'MASTER' },
-  { text: '博士', value: 'DOCTORATE' }
-];
-const political_columns = [
-  { text: '群众', value: 'MASSES' },
-  { text: '党员', value: 'PARTY_MEMBER' },
-  { text: '团员', value: 'LEAGUE_MEMBER' },
-  { text: '其他', value: 'OTHER' }
-];
-const occupational_columns = [
-  { text: '学生', value: 'STUDENT' },
-  { text: '工人', value: 'WORKER' },
-  { text: '农民', value: 'FARMER' },
-  { text: '教师', value: 'TEACHER' },
-  { text: '医生', value: 'DOCTOR' },
-  { text: '其他', value: 'OTHER' }
-];
-
-const openPicker = (field: 'education' | 'political' | 'occupation') => {
-  currentField = field;
-  if (field === 'education') currentColumns.value = edu_columns;
-  if (field === 'political') currentColumns.value = political_columns;
-  if (field === 'occupation') currentColumns.value = occupational_columns;
-  showPicker.value = true;
-};
-const onConfirm = ({ selectedValues, selectedOptions }: any) => {
-  if (currentField === 'education') education.value = selectedOptions[0]?.text;
-  if (currentField === 'political') political.value = selectedOptions[0]?.text;
-  if (currentField === 'occupation')
-    occupation.value = selectedOptions[0]?.text;
-  pickerValue.value = selectedValues;
-  showPicker.value = false;
-};
-
-/* -------------------- 上传逻辑 -------------------- */
-const afterReadFace = async (fileItem: { file: File }) => {
-  if (!fileItem.file) return;
-  if (fileItem.file.size > 2 * 1024 * 1024) {
-    showToast({ type: 'fail', message: '文件大小不能超过2MB', duration: 5000 });
-    faceUploadId.value = '';
-    id_face.value = [];
-    return;
-  }
-  try {
-    showToast({ type: 'loading', message: '上传中...', forbidClick: true });
-    const formData = new FormData();
-    formData.append('file', fileItem.file);
-    formData.append('resource_type', 'register');
-    const res = await uploadFile(formData);
-    closeToast();
-    faceUploadId.value = res.id;
-    showToast({
-      message: '身份证正面上传成功',
-      duration: 1000,
-      type: 'success'
-    });
-  } catch {
-    showToast({ type: 'fail', message: '上传失败', duration: 5000 });
-    faceUploadId.value = '';
-    id_face.value = [];
-  }
-};
-const afterReadBack = async (fileItem: { file: File }) => {
-  if (!fileItem.file) return;
-  if (fileItem.file.size > 2 * 1024 * 1024) {
-    showToast({ type: 'fail', message: '文件大小不能超过2MB', duration: 5000 });
-    backUploadId.value = '';
-    id_back.value = [];
-    return;
-  }
-  try {
-    showToast({ type: 'loading', message: '上传中...', forbidClick: true });
-    const formData = new FormData();
-    formData.append('file', fileItem.file);
-    formData.append('resource_type', 'register');
-    const res = await uploadFile(formData);
-    closeToast();
-    backUploadId.value = res.id;
-    showToast({
-      type: 'success',
-      message: '身份证反面上传成功',
-      duration: 2000
-    });
-  } catch {
-    showToast({ type: 'fail', message: '上传失败', duration: 5000 });
-    backUploadId.value = '';
-    id_back.value = [];
-    closeToast();
-  }
-};
-
-/* -------------------- 表单校验 -------------------- */
-const validateName = (val: string) => val && val.length >= 2;
-const validatePhone = (val: string) => /^1[3-9]\d{9}$/.test(val);
-const validateIdCard = (val: string) =>
-  /^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(
-    val
-  );
-// 身份证年龄校验（18~60岁）
-const validateIdCardAge = (idCard: string): boolean => {
-  let birthStr = '';
-
-  if (/^\d{15}$/.test(idCard)) {
-    // 15位，取7-12位，前加"19"
-    birthStr = '19' + idCard.slice(6, 12);
-  } else if (/^\d{17}[\dXx]$/.test(idCard)) {
-    // 18位，取7-14位
-    birthStr = idCard.slice(6, 14);
-  } else {
-    return false;
-  }
-
-  const year = parseInt(birthStr.slice(0, 4), 10);
-  const month = parseInt(birthStr.slice(4, 6), 10) - 1; // JS 月份从0开始
-  const day = parseInt(birthStr.slice(6, 8), 10);
-
-  const birthDate = new Date(year, month, day);
-  if (isNaN(birthDate.getTime())) {
-    return false;
-  }
-
-  // 计算年龄
-  const today = new Date();
-  let age = today.getFullYear() - year;
-  if (
-    today.getMonth() < month ||
-    (today.getMonth() === month && today.getDate() < day)
-  ) {
-    age--;
-  }
-
-  if (age < 18 || age > 60) {
-    return false;
-  }
-
-  return true;
-};
-
-const validateCardNumber = (val: string) => /^\d{16,19}$/.test(val);
-
-/* -------------------- 状态管理 -------------------- */
-// const status = ref<
-//   | 'submitted'
-//   | 'first_signing'
-//   | 'business_registration'
-//   | 'tax_registration'
-//   | 'second_signing'
-//   | 'completed'
-//   | 'failed'
-//   | 'cancelled'
-//   | 'pending'
-//   | ''
-// >('');
-
-const status = computed(() => store.status);
-const errorMessage = ref('');
-const username = ref('');
-const hasRedirected = ref(false);
 const corporationId = ref('');
 
-const statusMap: Record<string, string> = {
-  submitted: '已提交',
-  first_signing: '信息登记中',
-  second_signing: '二次签约中',
-  business_registration: '工商登记中',
-  tax_registration: '税务登记中',
-  completed: '已完成',
-  failed: '签约失败',
-  cancelled: '已取消',
-  pending: '处理中',
-  submit: '待审核',
-  approved: '已审核',
-  '': ''
-};
-const statusText = computed(() => status.value && statusMap[status.value]);
+/* -------------------- 无商户参数时按身份证查询 -------------------- */
+const idCardQuery = ref('');
+const queryByIdCardLoading = ref(false);
 
-/* 定时刷新逻辑 */
-let intervalId: number | null = null;
-let refreshCount = 0;
-const startAutoRefresh = () => {
-  if (intervalId) return;
-  refreshCount = 0;
-  intervalId = window.setInterval(async () => {
-    if (refreshCount >= 10) {
-      clearAutoRefresh();
-      return;
-    }
-    refreshCount++;
-    await fetchStatus();
-  }, 10000);
-};
-const clearAutoRefresh = () => {
-  if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
-  }
-};
-watch(status, (newStatus) => {
-  if (
-    newStatus === 'first_signing' ||
-    newStatus === 'second_signing' ||
-    newStatus === 'submitted'
-  ) {
-    startAutoRefresh();
-  } else {
-    clearAutoRefresh();
-  }
-});
-
-/* 查询状态 */
-const fetchStatus = async () => {
-  if (!store.individualId) {
-    store.clearCompletedAt();
-    store.clearStatus();
-    hasRedirected.value = false;
-    showToast({ type: 'fail', message: '请提交个体户信息', duration: 2000 });
+const onQueryByIdCard = () => {
+  const raw = idCardQuery.value.trim();
+  if (!raw) {
+    showToast('请输入身份证号');
     return;
   }
-  showToast({ type: 'loading', message: '加载中...', forbidClick: false });
-  try {
-    const res = await getIndividualStatus(store.individualId);
-    // status.value = 'first_signing';
-    if (status.value !== res.data.status) {
-      store.clearCompletedAt();
-      hasRedirected.value = false;
-    }
-    store.setStatus(res.data.status);
-    username.value = res.data.name;
-    name.value = res.data.name;
-    errorMessage.value = res.data.error_message || '';
-    if (status.value !== 'first_signing' && status.value !== 'second_signing') {
-      store.clearCompletedAt();
-      hasRedirected.value = false;
-    }
-    if (
-      (status.value === 'first_signing' || status.value === 'second_signing') &&
-      (!res.data.url_refreshing || res.data.url_refreshing === false) &&
-      !hasRedirected.value &&
-      res.data.signing_url &&
-      !completedAt.value
-    ) {
-      hasRedirected.value = true;
-      window.location.href = res.data.signing_url;
-    }
-    if (res.data.url_refreshing === true) {
-      showToast({
-        type: 'loading',
-        message: '跳转地址刷新中，请10s后重试',
-        forbidClick: false,
-        duration: 3000
+  if (!validateIdCard(raw)) {
+    showToast('请输入正确的身份证号');
+    return;
+  }
+  queryByIdCardLoading.value = true;
+  getIndividualByIDCard(raw)
+    .then((res: { data?: { id?: string; corporation_id?: number | string } }) => {
+      const id = res?.data?.id;
+      if (!id) {
+        showToast('未查询到该身份证对应的个体户信息');
+        return;
+      }
+      store.setIndividualId(String(id));
+      const corpId = res?.data?.corporation_id != null ? String(res.data.corporation_id) : '1';
+      corporationId.value = corpId;
+      // 将 corporation_id 带到 URL 参数（与进入带商户链接时一致）
+      router.replace({
+        path: route.path,
+        query: { ...route.query, corporationId: encodeId(corpId) }
       });
-    }
-  } catch {
-    showToast('查询失败，请稍后重试');
-    store.clearIndividualId();
-    store.clearCompletedAt();
-    store.clearStatus();
-    hasRedirected.value = false;
-  } finally {
-    // closeToast();
-  }
-};
-const throttledFetchStatus = throttle(fetchStatus, 3000, { trailing: false });
-
-/* 重新提交 */
-const resubmit = () => {
-  if (!store.individualId) {
-    store.clearCompletedAt();
-    store.clearStatus();
-    hasRedirected.value = false;
-    return;
-  }
-  showToast({ type: 'loading', message: '重新提交中...', forbidClick: false });
-  retry(store.individualId)
-    .then(() => {
-      showToast({ type: 'success', message: '重新提交成功' });
+      showToast('查询成功');
       fetchStatus();
     })
-    .finally(() => closeToast());
+    .catch(() => {
+      showToast('未查询到该身份证对应的个体户信息');
+    })
+    .finally(() => {
+      queryByIdCardLoading.value = false;
+    });
 };
 
-/* -------------------- 提交表单 -------------------- */
+/* -------------------- 状态逻辑（composable） -------------------- */
+const {
+  individualId,
+  status,
+  statusText,
+  username,
+  fetchStatus,
+  throttledFetchStatus,
+  resubmit
+} = useIndividualStatus(name);
+
+/* -------------------- 提交 -------------------- */
 const onSubmit = () => {
   const payload = {
     name: name.value,
@@ -706,10 +380,10 @@ const onSubmit = () => {
     .finally(() => closeToast());
 };
 
-/* ---------------- 平安车管家预提交 ----------------- */
 const onSubmitPre = () => {
   if (!corporationId.value) {
     showToast('您的链接有误，请联系系统管理员');
+    return;
   }
   registerPre({
     name: name.value,
@@ -725,8 +399,8 @@ const onSubmitPre = () => {
     })
     .finally(() => closeToast());
 };
+
 /* -------------------- 生命周期 -------------------- */
-const route = useRoute();
 onMounted(() => {
   const completedAtQuery = route.query.completedAt;
   const individualIdQuery = route.query.individualId;
@@ -734,13 +408,11 @@ onMounted(() => {
   if (individualIdQuery) {
     store.setIndividualId(individualIdQuery as string);
     store.clearCompletedAt();
-    hasRedirected.value = false;
   } else if (completedAtQuery) {
     store.setCompletedAt(completedAtQuery as string);
   } else {
     store.clearStatus();
     store.clearCompletedAt();
-    hasRedirected.value = false;
   }
   if (store.individualId) {
     fetchStatus();
@@ -748,9 +420,6 @@ onMounted(() => {
   if (corporationIdQuery) {
     corporationId.value = decodeId(corporationIdQuery as string) || '1';
   }
-});
-onUnmounted(() => {
-  clearAutoRefresh();
 });
 </script>
 
@@ -770,40 +439,14 @@ onUnmounted(() => {
 .submit-bar {
   margin: 24px 12px 0;
 }
-.status-page {
-  padding: 60px 12px 0;
-  background-color: #f5f6fa;
-  height: calc(100vh - 60px);
+.id-card-query-wrap {
+  padding: 24px 0;
 }
-.status-text {
-  text-align: center;
-  font-size: 13px;
-  color: #666;
-}
-.error-text,
-.hint-text,
-.success-text {
-  font-size: 14px;
-  text-indent: 2em;
-  line-height: 1.6;
-}
-.tip-text {
-  text-align: center;
-  font-size: 13px;
-  color: #666;
-}
-.btn-group {
-  display: flex;
-  justify-content: center;
-}
-.refresh-btn {
-  width: 160px;
-  display: block;
-  margin: 40px auto;
-}
-.highlight-text-normal {
-  color: #666;
-  line-height: 1.6;
+.query-tip {
+  margin: 16px 16px 0;
+  font-size: 12px;
+  color: #969799;
+  line-height: 1.5;
 }
 .id-tips {
   display: flex;

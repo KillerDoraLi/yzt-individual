@@ -39,6 +39,22 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '平台劳务个税计算器'
         }
+      },
+      {
+        path: '/guide/alipay-realname',
+        name: 'AlipayGuide',
+        component: () => import('@/views/GuidePage.vue'),
+        meta: {
+          title: '工商验证指引'
+        }
+      },
+      {
+        path: '/guide/tax-registration',
+        name: 'TaxRegistrationGuide',
+        component: () => import('@/views/GuidePage.vue'),
+        meta: {
+          title: '税务登记指引'
+        }
       }
     ]
   }

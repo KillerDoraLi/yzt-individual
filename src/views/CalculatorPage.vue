@@ -3,16 +3,21 @@ import { ref, computed, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import {
   calculateAfterTaxSalary,
-  CalculatorInput
+  CalculatorInput,
+  type MonthDisplay,
+  type SummaryDisplay
 } from '@/utils/taxCalculator';
 import { generateDisplayData } from '@/utils/displayFormatter';
+
+/** 计算结果展示类型 */
+type CalculationDisplay = { months: MonthDisplay[]; summary: SummaryDisplay };
 
 // 响应式数据
 const calculationMode = ref<'uniform' | 'custom'>('uniform');
 const selectedMonths = ref<number[]>([]);
 const uniformSalary = ref<number>(0);
 const customSalaries = ref<Record<number, number>>({});
-const calculationResult = ref(null);
+const calculationResult = ref<CalculationDisplay | null>(null);
 
 // 月份选项
 const monthOptions = [
@@ -150,10 +155,10 @@ const reset = () => {
                   placeholder="请输入税前收入"
                   style="width: 100%"
                   :formatter="
-                    (value) =>
-                      `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    (value: string | number | undefined) =>
+                      `¥ ${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                   "
-                  :parser="(value) => value!.replace(/¥\s?|(,*)/g, '')"
+                  :parser="(value: string) => value.replace(/¥\s?|(,*)/g, '')"
                 />
               </div>
 
@@ -177,10 +182,10 @@ const reset = () => {
                         placeholder="税前收入"
                         style="width: 100%"
                         :formatter="
-                          (value) =>
-                            `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                          (value: string | number | undefined) =>
+                            `¥ ${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                         "
-                        :parser="(value) => value!.replace(/¥\s?|(,*)/g, '')"
+                        :parser="(value: string) => value.replace(/¥\s?|(,*)/g, '')"
                       />
                     </div>
                   </a-col>
