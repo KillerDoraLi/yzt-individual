@@ -35,6 +35,7 @@ export const STATUS_MAP: Record<string, string> = {
   wait_alipay_realname: '工商验证',
   second_signing: '二次签约',
   tax_registration: '税务登记',
+  tax_agent_pending: '税务登记',
   completed: '已完成',
   failed: '签约失败',
   cancelled: '已取消',

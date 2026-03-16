@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="corporationId">
+    <div v-if="corporationId" :class="{ 'status-page-wrap': individualId && status }">
       <!-- 表单区域 -->
       <div
         v-if="
@@ -249,7 +249,9 @@
           查询
         </van-button>
       </div>
-      <p class="query-tip">未携带商户链接时，可通过身份证号查询您的个体户签约信息。</p>
+      <p class="query-tip">
+        未携带商户链接时，可通过身份证号查询您的个体户签约信息。
+      </p>
     </div>
   </div>
 </template>
@@ -258,11 +260,7 @@
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { showToast, closeToast } from 'vant';
-import {
-  registerIndividual,
-  registerPre,
-  getIndividualByIDCard
-} from '@/api';
+import { registerIndividual, registerPre, getIndividualByIDCard } from '@/api';
 import { useIndividualStore } from '@/store/individual';
 import { decodeId, encodeId } from '@/utils/encode';
 import idTip1 from '@/assets/id-tip-1.png';
@@ -318,23 +316,28 @@ const onQueryByIdCard = () => {
   }
   queryByIdCardLoading.value = true;
   getIndividualByIDCard(raw)
-    .then((res: { data?: { id?: string; corporation_id?: number | string } }) => {
-      const id = res?.data?.id;
-      if (!id) {
-        showToast('未查询到该身份证对应的个体户信息');
-        return;
+    .then(
+      (res: { data?: { id?: string; corporation_id?: number | string } }) => {
+        const id = res?.data?.id;
+        if (!id) {
+          showToast('未查询到该身份证对应的个体户信息');
+          return;
+        }
+        store.setIndividualId(String(id));
+        const corpId =
+          res?.data?.corporation_id != null
+            ? String(res.data.corporation_id)
+            : '1';
+        corporationId.value = corpId;
+        // 将 corporation_id 带到 URL 参数（与进入带商户链接时一致）
+        router.replace({
+          path: route.path,
+          query: { ...route.query, corporationId: encodeId(corpId) }
+        });
+        showToast('查询成功');
+        fetchStatus();
       }
-      store.setIndividualId(String(id));
-      const corpId = res?.data?.corporation_id != null ? String(res.data.corporation_id) : '1';
-      corporationId.value = corpId;
-      // 将 corporation_id 带到 URL 参数（与进入带商户链接时一致）
-      router.replace({
-        path: route.path,
-        query: { ...route.query, corporationId: encodeId(corpId) }
-      });
-      showToast('查询成功');
-      fetchStatus();
-    })
+    )
     .catch(() => {
       showToast('未查询到该身份证对应的个体户信息');
     })
@@ -424,6 +427,13 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 状态页时铺满视口并延伸到底部安全区，避免手机底部白边 */
+.status-page-wrap {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: #f5f6fa;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 .layout {
   background-color: #f7f8fa;
   min-height: 100vh;

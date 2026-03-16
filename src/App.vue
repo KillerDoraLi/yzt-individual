@@ -11,12 +11,21 @@
 </template>
 
 <style>
+html,
+body {
+  min-height: 100%;
+}
+body {
+  background-color: #f5f6fa;
+}
 #app {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
   max-width: 100vw;
+  background-color: #f5f6fa;
 }
 @font-face {
   font-family: 'Glyphicons Halflings';

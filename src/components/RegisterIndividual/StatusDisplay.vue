@@ -12,7 +12,7 @@
           :key="step.key"
           class="timeline-item"
           :class="{
-            'timeline-item--current': step.key === status,
+            'timeline-item--current': step.key === status || (status === 'tax_agent_pending' && step.key === 'tax_registration'),
             'timeline-item--done': currentStepIndex > index,
             'timeline-item--pending': currentStepIndex < index
           }"
@@ -56,7 +56,7 @@
           查看指引
         </van-button>
       </template>
-      <template v-if="status === 'tax_registration'">
+      <template v-if="status === 'tax_registration' || status === 'tax_agent_pending'">
         <p class="hint-text">
           您当前处于税务登记环节，请按以下指引完成税务登记操作。
         </p>
@@ -117,25 +117,26 @@ const props = defineProps<{
   username: string;
 }>();
 
-const router = useRouter();
-
 defineEmits<{
   resubmit: [];
   refresh: [];
 }>();
 
+const router = useRouter();
+
 const goToAlipayGuide = () => {
-  router.push({ name: 'AlipayGuide' });
+  router.push('/guide/alipay-realname');
 };
 const goToTaxGuide = () => {
-  router.push({ name: 'TaxRegistrationGuide' });
+  router.push('/guide/tax-registration');
 };
 
 const showTimeline = computed(
   () =>
     STATUS_TIMELINE_ORDER.includes(props.status) ||
     props.status === 'completed' ||
-    props.status === 'first_signing'
+    props.status === 'first_signing' ||
+    props.status === 'tax_agent_pending'
 );
 
 const timelineSteps = computed(() =>
@@ -145,11 +146,14 @@ const timelineSteps = computed(() =>
   }))
 );
 
-/** 当前步骤下标；first_signing 时落在工商登记；completed 时全部已完成 */
+/** 当前步骤下标；first_signing 落在工商登记；tax_agent_pending 落在税务登记；completed 时全部已完成 */
 const currentStepIndex = computed(() => {
   if (props.status === 'completed') return STATUS_TIMELINE_ORDER.length;
   if (props.status === 'first_signing') {
     return STATUS_TIMELINE_ORDER.indexOf('business_registration');
+  }
+  if (props.status === 'tax_agent_pending') {
+    return STATUS_TIMELINE_ORDER.indexOf('tax_registration');
   }
   return STATUS_TIMELINE_ORDER.indexOf(props.status);
 });
@@ -158,8 +162,10 @@ const currentStepIndex = computed(() => {
 <style scoped>
 .status-page {
   padding: 60px 12px 0;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   background-color: #f5f6fa;
-  height: calc(100vh - 60px);
+  min-height: calc(100vh - 60px + env(safe-area-inset-bottom, 0px));
+  min-height: calc(100dvh - 60px + env(safe-area-inset-bottom, 0px));
 }
 .status-content {
   padding: 16px;
@@ -258,14 +264,14 @@ const currentStepIndex = computed(() => {
   font-weight: 700;
   font-size: 15px;
 }
-/* 未完成：点为灰色，数字灰色，文字为绿色 */
+/* 未完成：点与文字均为灰色 */
 .timeline-item--pending .timeline-dot {
   background: #dcdee0;
   box-shadow: 0 0 0 1px #dcdee0;
   color: #969799;
 }
 .timeline-item--pending .timeline-content {
-  color: #07c160;
+  color: #969799;
   font-size: 14px;
 }
 .timeline-content {
