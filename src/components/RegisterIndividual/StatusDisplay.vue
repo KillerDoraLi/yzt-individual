@@ -133,7 +133,9 @@ const goToTaxGuide = () => {
 
 const showTimeline = computed(
   () =>
-    STATUS_TIMELINE_ORDER.includes(props.status) || props.status === 'completed'
+    STATUS_TIMELINE_ORDER.includes(props.status) ||
+    props.status === 'completed' ||
+    props.status === 'first_signing'
 );
 
 const timelineSteps = computed(() =>
@@ -143,12 +145,14 @@ const timelineSteps = computed(() =>
   }))
 );
 
-/** 当前步骤下标；completed 时设为长度，使时间轴全部显示为已完成 */
-const currentStepIndex = computed(() =>
-  props.status === 'completed'
-    ? STATUS_TIMELINE_ORDER.length
-    : STATUS_TIMELINE_ORDER.indexOf(props.status)
-);
+/** 当前步骤下标；first_signing 时落在工商登记；completed 时全部已完成 */
+const currentStepIndex = computed(() => {
+  if (props.status === 'completed') return STATUS_TIMELINE_ORDER.length;
+  if (props.status === 'first_signing') {
+    return STATUS_TIMELINE_ORDER.indexOf('business_registration');
+  }
+  return STATUS_TIMELINE_ORDER.indexOf(props.status);
+});
 </script>
 
 <style scoped>
