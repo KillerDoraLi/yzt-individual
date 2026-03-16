@@ -441,6 +441,9 @@ onMounted(() => {
 }
 .id-card-query-wrap {
   padding: 24px 0;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 88px);
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 .query-tip {
   margin: 16px 16px 0;
