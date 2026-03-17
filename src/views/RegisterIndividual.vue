@@ -1,17 +1,23 @@
 <template>
   <div>
-    <div v-if="corporationId" :class="{ 'status-page-wrap': individualId && status }">
+    <div
+      v-if="corporationId"
+      :class="{ 'status-page-wrap': individualId && status }"
+    >
       <!-- 表单区域 -->
       <div
         v-if="
           (!individualId || Number(corporationId) === 892) &&
           (!status || status === 'approved')
         "
+        ref="formLayoutRef"
         class="layout"
+        @focusin="onFormFieldFocus"
       >
         <van-form
           v-if="Number(corporationId) === 892 && !status"
           @submit="onSubmitPre"
+          @failed="onFormFailed"
           class="form-wrapper"
         >
           <van-divider>基本信息</van-divider>
@@ -70,6 +76,7 @@
         <van-form
           v-if="Number(corporationId) !== 892 || status === 'approved'"
           @submit="onSubmit"
+          @failed="onFormFailed"
           class="form-wrapper"
         >
           <van-divider>基本信息</van-divider>
@@ -257,7 +264,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { nextTick, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { showToast, closeToast } from 'vant';
 import { registerIndividual, registerPre, getIndividualByIDCard } from '@/api';
@@ -282,6 +289,7 @@ import StatusDisplay from '@/components/RegisterIndividual/StatusDisplay.vue';
 const store = useIndividualStore();
 const route = useRoute();
 const router = useRouter();
+const formLayoutRef = ref<HTMLElement | null>(null);
 
 /* -------------------- 表单字段 -------------------- */
 const name = ref('');
@@ -357,6 +365,27 @@ const {
   resubmit
 } = useIndividualStatus(name);
 
+/* -------------------- 华为等安卓机：键盘弹起时把当前输入框滚入可视区 -------------------- */
+const onFormFieldFocus = (e: FocusEvent) => {
+  const el = e.target as HTMLElement;
+  if (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') return;
+  setTimeout(() => {
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, 350);
+};
+
+/* -------------------- 校验失败时把表单滚动容器滚回顶部，确保姓名/身份证等可见（华为上错误提示出现后能划下来） -------------------- */
+const onFormFailed = () => {
+  nextTick(() => {
+    setTimeout(() => {
+      const el = formLayoutRef.value;
+      if (el) {
+        el.scrollTop = 0;
+      }
+    }, 200);
+  });
+};
+
 /* -------------------- 提交 -------------------- */
 const onSubmit = () => {
   const payload = {
@@ -374,13 +403,30 @@ const onSubmit = () => {
     car_identification: car_identification.value
   };
   showToast({ type: 'loading', message: '提交中...', forbidClick: false });
+  let submitted = false;
   registerIndividual(payload)
     .then((res) => {
+      submitted = true;
       store.setIndividualId(res.data.id);
       showToast('个体户信息提交成功');
       fetchStatus();
     })
-    .finally(() => closeToast());
+    .catch(
+      (err: {
+        response?: { data?: { message?: string } };
+        message?: string;
+      }) => {
+        closeToast();
+        const msg =
+          err.response?.data?.message ||
+          err.message ||
+          '提交失败，请检查信息后重试';
+        showToast({ type: 'fail', message: msg, duration: 3000 });
+      }
+    )
+    .finally(() => {
+      if (submitted) closeToast();
+    });
 };
 
 const onSubmitPre = () => {
@@ -388,6 +434,7 @@ const onSubmitPre = () => {
     showToast('您的链接有误，请联系系统管理员');
     return;
   }
+  let submitted = false;
   registerPre({
     name: name.value,
     identification_number: identification_number.value,
@@ -396,11 +443,27 @@ const onSubmitPre = () => {
     corporation_id: Number(corporationId.value)
   })
     .then((res) => {
+      submitted = true;
       store.setIndividualId(res.data.id);
       showToast('个体户信息提交成功');
       fetchStatus();
     })
-    .finally(() => closeToast());
+    .catch(
+      (err: {
+        response?: { data?: { message?: string } };
+        message?: string;
+      }) => {
+        closeToast();
+        const msg =
+          err.response?.data?.message ||
+          err.message ||
+          '提交失败，请检查信息后重试';
+        showToast({ type: 'fail', message: msg, duration: 3000 });
+      }
+    )
+    .finally(() => {
+      if (submitted) closeToast();
+    });
 };
 
 /* -------------------- 生命周期 -------------------- */
@@ -434,12 +497,29 @@ onMounted(() => {
   background-color: #f5f6fa;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+/* 表单区作为固定高度的滚动容器，避免华为上错误提示出现后页面被顶上去划不下来 */
 .layout {
   background-color: #f7f8fa;
-  min-height: 100vh;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 .form-wrapper {
   padding: 12px 0;
+}
+/* 键盘弹起时 scrollIntoView 保留上下间距，避免输入框贴边或被键盘挡住 */
+.form-wrapper input,
+.form-wrapper textarea,
+.form-wrapper .van-field__control {
+  scroll-margin-top: 80px;
+  scroll-margin-bottom: 120px;
 }
 .van-divider {
   color: #666;
