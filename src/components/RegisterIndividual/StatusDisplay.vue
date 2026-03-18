@@ -4,7 +4,9 @@
     <div v-if="showTimeline" class="timeline-wrap">
       <div class="timeline-title">
         签约进度
-        <span v-if="status === 'completed'" class="timeline-title-done">（以下步骤已全部完成）</span>
+        <span v-if="status === 'completed'" class="timeline-title-done"
+          >（以下步骤已全部完成）</span
+        >
       </div>
       <div class="timeline">
         <div
@@ -12,13 +14,18 @@
           :key="step.key"
           class="timeline-item"
           :class="{
-            'timeline-item--current': step.key === status || (status === 'tax_agent_pending' && step.key === 'tax_registration'),
+            'timeline-item--current':
+              step.key === status ||
+              (status === 'tax_agent_pending' &&
+                step.key === 'tax_registration'),
             'timeline-item--done': currentStepIndex > index,
             'timeline-item--pending': currentStepIndex < index
           }"
         >
           <div class="timeline-dot">
-            <span v-if="currentStepIndex > index" class="timeline-dot-check">✓</span>
+            <span v-if="currentStepIndex > index" class="timeline-dot-check"
+              >✓</span
+            >
             <span v-else>{{ index + 1 }}</span>
           </div>
           <div v-if="index < timelineSteps.length - 1" class="timeline-line" />
@@ -35,36 +42,41 @@
         您的信息已提交审核，审核结果于24小时后更新，届时请刷新该界面或再次扫码进入该界面进行后续操作。
       </p>
       <p v-if="status === 'submitted'" class="hint-text">
-        您的信息已提交成功，系统将自动为您跳转至工商登记页面。若 30 秒内未跳转，请点击下方【刷新状态】按钮手动刷新。
+        您的信息已提交成功，系统将自动为您跳转至工商登记页面。若 30
+        秒内未跳转，请点击下方【刷新状态】按钮手动刷新。
       </p>
-      <p v-if="status === 'first_signing' || status === 'second_signing'" class="hint-text">
+      <p
+        v-if="status === 'first_signing' || status === 'second_signing'"
+        class="hint-text"
+      >
         <van-highlight
           unhighlight-class="highlight-text-normal"
           :keywords="['', '19065163814']"
           source-string="系统将在 30s 后跳转到签约页面，请您耐心等待～  若无法跳转请点击【刷新状态】按钮手动刷新或致电 19065163814 联系管理员。"
         />
       </p>
+      <p
+        v-if="status === 'business_registration'"
+        class="hint-text step-in-progress-hint"
+      >
+        此环节进行中，下一环节将通过短信通知您开启。
+      </p>
       <template v-if="status === 'wait_alipay_realname'">
         <p class="hint-text">
           您当前处于工商验证环节，请按以下指引完成支付宝实名认证操作。
+          操作完成后，处于出证流程中，下一环节将通过短信通知您开启。
         </p>
-        <van-button
-          type="primary"
-          class="guide-btn"
-          @click="goToAlipayGuide"
-        >
+        <van-button type="primary" class="guide-btn" @click="goToAlipayGuide">
           查看指引
         </van-button>
       </template>
-      <template v-if="status === 'tax_registration' || status === 'tax_agent_pending'">
+      <template
+        v-if="status === 'tax_registration' || status === 'tax_agent_pending'"
+      >
         <p class="hint-text">
           您当前处于税务登记环节，请按以下指引完成税务登记操作。
         </p>
-        <van-button
-          type="primary"
-          class="guide-btn"
-          @click="goToTaxGuide"
-        >
+        <van-button type="primary" class="guide-btn" @click="goToTaxGuide">
           查看指引
         </van-button>
       </template>
@@ -109,7 +121,10 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { STATUS_MAP, STATUS_TIMELINE_ORDER } from '@/constants/registerIndividual';
+import {
+  STATUS_MAP,
+  STATUS_TIMELINE_ORDER
+} from '@/constants/registerIndividual';
 
 const props = defineProps<{
   status: string;
@@ -290,6 +305,11 @@ const currentStepIndex = computed(() => {
   font-size: 14px;
   text-indent: 2em;
   line-height: 1.6;
+}
+.step-in-progress-hint {
+  margin-top: 8px;
+  color: #1989fa;
+  font-weight: 500;
 }
 .tip-text {
   text-align: center;
