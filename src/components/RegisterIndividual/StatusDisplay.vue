@@ -59,12 +59,12 @@
         v-if="status === 'business_registration'"
         class="hint-text step-in-progress-hint"
       >
-        此环节进行中，下一环节将通过短信通知您开启。
+        此环节进行中，下一环节将通过短信通知您继续操作。
       </p>
       <template v-if="status === 'wait_alipay_realname'">
         <p class="hint-text">
           您当前处于工商验证环节，请按以下指引完成支付宝实名认证操作。
-          操作完成后，处于出证流程中，下一环节将通过短信通知您开启。
+          操作完成后，处于出证流程中，下一环节将通过短信通知您继续操作。
         </p>
         <van-button type="primary" class="guide-btn" @click="goToAlipayGuide">
           查看指引
