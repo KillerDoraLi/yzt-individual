@@ -55,6 +55,22 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '税务登记指引'
         }
+      },
+      {
+        path: '/smartsheet/tech-info',
+        name: 'SmartsheetTechInfo',
+        component: () => import('@/views/SmartsheetInfoPage.vue'),
+        meta: {
+          title: '信息系统的综合技术信息收集'
+        }
+      },
+      {
+        path: '/smartsheet/vehicle-lease',
+        name: 'SmartsheetVehicleLease',
+        component: () => import('@/views/SmartsheetCarPage.vue'),
+        meta: {
+          title: '车辆经营租赁业务的推广'
+        }
       }
     ]
   }
