@@ -42,6 +42,7 @@ export const STATUS_MAP: Record<string, string> = {
   pending: '处理中',
   submit: '待审核',
   approved: '已审核',
+  logout: '已注销',
   '': ''
 };
 
