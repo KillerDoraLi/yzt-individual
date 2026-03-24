@@ -32,6 +32,18 @@
         </div>
       </section>
     </div>
+
+    <div class="smartsheet-card video-tip-card">
+      <div class="hint-title video-tip-title">拍摄视频提示</div>
+      <p class="video-tip-text">
+        录制视频时请参照下图双手持身份证置于胸前，保持证件信息清晰可见，勿用手指遮挡证件上的文字与照片。
+      </p>
+      <img
+        src="@/assets/smartsheet/id_show.png"
+        alt="身份证信息清晰可见的持证照示范"
+        class="id-show-img"
+      />
+    </div>
   </div>
 </template>
 
@@ -71,6 +83,27 @@ const copyLink = async () => {
 .hint-card {
   margin-bottom: 20px;
   padding: 20px;
+}
+.video-tip-card {
+  padding: 20px;
+}
+.video-tip-title {
+  margin-bottom: 12px;
+}
+.video-tip-text {
+  margin: 0 0 16px;
+  font-size: 15px;
+  color: #646566;
+  line-height: 1.65;
+}
+.id-show-img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .hint-title {
   font-size: 16px;
