@@ -66,12 +66,19 @@ const copyLink = async () => {
 </script>
 
 <style scoped>
+/* 固定一屏高度 + 内部滚动，避免华为等机型顶部被挡、整页划不动 */
 .smartsheet-page {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   padding: 16px;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 24px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 56px);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
   box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   background: linear-gradient(180deg, #f0f2f5 0%, #f5f6fa 100%);
 }
 .smartsheet-card {

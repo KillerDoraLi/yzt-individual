@@ -12,4 +12,9 @@
 
 <script setup lang="ts"></script>
 
-<style scoped></style>
+<style scoped>
+.layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+</style>
